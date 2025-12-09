@@ -1,11 +1,10 @@
 import { BookOpen } from 'lucide-react';
 import { ReadingCalendar } from '@/components/ReadingCalendar';
-import { Dashboard } from '@/components/Dashboard';
+import { StatsTabs } from '@/components/StatsTabs';
 import { useReadingTracker } from '@/hooks/useReadingTracker';
 
 const Index = () => {
-  const { getStatus, toggleStatus, getStats } = useReadingTracker();
-  const stats = getStats();
+  const { records, getStatus, toggleStatus } = useReadingTracker();
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,7 +29,7 @@ const Index = () => {
 
       {/* Main content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-5 gap-8">
           {/* Calendar section */}
           <div className="lg:col-span-2">
             <ReadingCalendar 
@@ -47,9 +46,9 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Dashboard section */}
-          <div className="lg:col-span-1">
-            <Dashboard stats={stats} />
+          {/* Stats section */}
+          <div className="lg:col-span-3">
+            <StatsTabs records={records} />
           </div>
         </div>
       </main>
