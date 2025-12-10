@@ -1,16 +1,18 @@
+import { forwardRef } from 'react';
 import { YearStats, MonthStats } from '@/hooks/useReadingStats';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Award, Calendar, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 
 interface MonthlyChartProps {
   yearStats: YearStats;
 }
 
-export function MonthlyChart({ yearStats }: MonthlyChartProps) {
+export const MonthlyChart = forwardRef<HTMLDivElement, MonthlyChartProps>(
+  function MonthlyChart({ yearStats }, ref) {
   const maxDays = Math.max(...yearStats.monthlyBreakdown.map(m => m.daysTotal), 1);
   
   return (
-    <div className="bg-card rounded-xl p-5 border border-border">
+    <div ref={ref} className="bg-card rounded-xl p-5 border border-border">
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-5 h-5 text-primary" />
         <h3 className="font-display font-semibold text-foreground">
@@ -50,7 +52,7 @@ export function MonthlyChart({ yearStats }: MonthlyChartProps) {
       </div>
     </div>
   );
-}
+});
 
 function MonthBar({ month, maxDays }: { month: MonthStats; maxDays: number }) {
   const today = new Date();

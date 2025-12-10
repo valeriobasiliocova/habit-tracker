@@ -128,21 +128,30 @@ export function useReadingStats(records: ReadingRecord) {
     const percentage = totalDaysMarked > 0 ? Math.round((totalDaysRead / totalDaysMarked) * 100) : 0;
     const longestStreak = calculateStreak(readDates);
 
-    // Current streak
+    // Current streak - if today is 'missed', streak is 0
     let currentStreak = 0;
     const today = new Date();
     const todayKey = today.toISOString().split('T')[0];
-    let checkDate = new Date(today);
     
-    while (true) {
-      const key = checkDate.toISOString().split('T')[0];
-      if (records[key] === 'done') {
-        currentStreak++;
+    // If today is marked as missed, streak is 0
+    if (records[todayKey] === 'missed') {
+      currentStreak = 0;
+    } else {
+      let checkDate = new Date(today);
+      
+      // If today isn't marked yet, start checking from yesterday
+      if (!records[todayKey]) {
         checkDate.setDate(checkDate.getDate() - 1);
-      } else if (key === todayKey && !records[key]) {
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
+      }
+      
+      while (true) {
+        const key = checkDate.toISOString().split('T')[0];
+        if (records[key] === 'done') {
+          currentStreak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
       }
     }
 
@@ -175,20 +184,30 @@ export function useReadingStats(records: ReadingRecord) {
     let worstDayOfWeek: { day: string; percentage: number } | null = null;
     let bestPct = -1;
     let worstPct = 101;
+    let bestDayNum = -1;
+    let worstDayNum = -1;
 
     Object.entries(dayOfWeekStats).forEach(([dayNum, stats]) => {
       if (stats.total > 0) {
         const pct = Math.round((stats.done / stats.total) * 100);
+        const dayIndex = parseInt(dayNum);
         if (pct > bestPct) {
           bestPct = pct;
-          bestDayOfWeek = { day: DAY_NAMES[parseInt(dayNum)], percentage: pct };
+          bestDayNum = dayIndex;
+          bestDayOfWeek = { day: DAY_NAMES[dayIndex], percentage: pct };
         }
         if (pct < worstPct) {
           worstPct = pct;
-          worstDayOfWeek = { day: DAY_NAMES[parseInt(dayNum)], percentage: pct };
+          worstDayNum = dayIndex;
+          worstDayOfWeek = { day: DAY_NAMES[dayIndex], percentage: pct };
         }
       }
     });
+    
+    // If best and worst are the same, don't show worst
+    if (bestDayNum === worstDayNum) {
+      worstDayOfWeek = null;
+    }
 
     const overall: OverallStats = {
       totalDaysRead,
@@ -292,11 +311,13 @@ export function useReadingStats(records: ReadingRecord) {
       };
     });
 
-    // Current month stats
+    // Current month stats - calculate percentage based on days elapsed, not just marked days
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     const currentMonthDays = allDays.filter(d => d.month === currentMonth && d.year === currentYear);
     const currentMonthReadDates = currentMonthDays.filter(d => d.status === 'done').map(d => d.date).sort();
+    const daysElapsedThisMonth = today.getDate(); // Days elapsed in current month (1-based)
+    const markedDaysThisMonth = currentMonthDays.length;
     
     const monthStats: MonthStats = {
       month: currentMonth,
@@ -304,9 +325,10 @@ export function useReadingStats(records: ReadingRecord) {
       name: MONTH_NAMES[currentMonth],
       daysRead: currentMonthReadDates.length,
       daysMissed: currentMonthDays.filter(d => d.status === 'missed').length,
-      daysTotal: currentMonthDays.length,
-      percentage: currentMonthDays.length > 0 
-        ? Math.round((currentMonthReadDates.length / currentMonthDays.length) * 100) 
+      daysTotal: markedDaysThisMonth,
+      // Use marked days for percentage if any exist, otherwise 0
+      percentage: markedDaysThisMonth > 0 
+        ? Math.round((currentMonthReadDates.length / markedDaysThisMonth) * 100) 
         : 0,
       bestStreak: calculateStreak(currentMonthReadDates),
     };
