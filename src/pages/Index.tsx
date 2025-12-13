@@ -1,23 +1,43 @@
-import { ReadingCalendar } from '@/components/ReadingCalendar';
-import { useReadingTracker } from '@/hooks/useReadingTracker';
+import { HabitCalendar } from '@/components/HabitCalendar';
+import { HabitSettings } from '@/components/HabitSettings';
+import { useHabitTracker } from '@/hooks/useHabitTracker';
 
 const Index = () => {
-  const { getStatus, toggleStatus } = useReadingTracker();
+  const {
+    habits,
+    records,
+    addHabit,
+    removeHabit,
+    toggleHabitStatus
+  } = useHabitTracker();
 
   return (
-    <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
-      <div className="w-full max-w-md">
-        <ReadingCalendar 
-          getStatus={getStatus} 
-          toggleStatus={toggleStatus} 
+    <div className="flex-1 min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 space-y-8 animate-fade-in">
+      <div className="w-full w-[min(100%,_500px)] space-y-6">
+
+        {/* Header Section */}
+        <div className="flex items-center justify-between px-2">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground">Il Tuo Percorso</h1>
+            <p className="text-muted-foreground text-sm">Costruisci la tua versione migliore, giorno dopo giorno.</p>
+          </div>
+          <HabitSettings
+            habits={habits}
+            onAddHabit={addHabit}
+            onRemoveHabit={removeHabit}
+          />
+        </div>
+
+        {/* Main Calendar */}
+        <HabitCalendar
+          habits={habits}
+          records={records}
+          onToggleHabit={toggleHabitStatus}
         />
-        
-        {/* Instructions */}
-        <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-accent/30 rounded-xl border border-border animate-fade-in" style={{ animationDelay: '400ms' }}>
-          <p className="text-xs sm:text-sm text-muted-foreground text-center">
-            <strong className="text-foreground">Come funziona:</strong> Clicca su un giorno per segnare se hai letto. 
-            Il primo click segna "letto" (verde), il secondo "non letto" (rosso), il terzo rimuove la selezione.
-          </p>
+
+        {/* Quote / Footer */}
+        <div className="text-center pt-8 opacity-60 hover:opacity-100 transition-opacity">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Keep Going</p>
         </div>
       </div>
     </div>

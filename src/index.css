@@ -1,111 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
-
 @layer base {
   :root {
-    --background: 40 33% 96%;
-    --foreground: 25 20% 15%;
+    /* Minimal Tech - Light Mode (Clean, stark) */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
 
-    --card: 40 40% 98%;
-    --card-foreground: 25 20% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
-    --popover: 40 40% 98%;
-    --popover-foreground: 25 20% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
 
-    --primary: 25 60% 45%;
-    --primary-foreground: 40 33% 98%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 35 30% 88%;
-    --secondary-foreground: 25 20% 25%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 35 20% 90%;
-    --muted-foreground: 25 15% 45%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 35 45% 82%;
-    --accent-foreground: 25 20% 20%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
-    --success: 145 55% 42%;
-    --success-foreground: 0 0% 100%;
+    --success: 142 76% 36%;
+    --success-foreground: 355 100% 97%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --reading-done: 145 55% 42%;
-    --reading-missed: 0 65% 55%;
-    --reading-neutral: 35 20% 85%;
-
-    --border: 35 25% 85%;
-    --input: 35 25% 85%;
-    --ring: 25 60% 45%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 40 30% 94%;
-    --sidebar-foreground: 25 20% 25%;
-    --sidebar-primary: 25 60% 45%;
-    --sidebar-primary-foreground: 40 33% 98%;
-    --sidebar-accent: 35 35% 88%;
-    --sidebar-accent-foreground: 25 20% 20%;
-    --sidebar-border: 35 25% 85%;
-    --sidebar-ring: 25 60% 45%;
-
-    --font-display: 'Cormorant Garamond', serif;
+    --font-display: 'Inter', sans-serif;
     --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
   }
 
   .dark {
-    --background: 25 20% 10%;
-    --foreground: 40 25% 92%;
+    /* Minimal Tech - Dark Mode (Deep, Neon hints) */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 25 18% 14%;
-    --card-foreground: 40 25% 92%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 25 18% 14%;
-    --popover-foreground: 40 25% 92%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 35 65% 55%;
-    --primary-foreground: 25 20% 10%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
 
-    --secondary: 25 15% 20%;
-    --secondary-foreground: 40 25% 88%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 25 15% 18%;
-    --muted-foreground: 35 15% 55%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --accent: 25 20% 22%;
-    --accent-foreground: 40 25% 92%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 55% 45%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
 
-    --success: 145 50% 38%;
-    --success-foreground: 0 0% 100%;
+    --success: 142 70% 50%;
+    --success-foreground: 144 100% 5%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --reading-done: 145 50% 38%;
-    --reading-missed: 0 55% 45%;
-    --reading-neutral: 25 15% 25%;
-
-    --border: 25 15% 22%;
-    --input: 25 15% 22%;
-    --ring: 35 65% 55%;
-
-    --sidebar-background: 25 18% 12%;
-    --sidebar-foreground: 40 25% 88%;
-    --sidebar-primary: 35 65% 55%;
-    --sidebar-primary-foreground: 25 20% 10%;
-    --sidebar-accent: 25 15% 18%;
-    --sidebar-accent-foreground: 40 25% 88%;
-    --sidebar-border: 25 15% 22%;
-    --sidebar-ring: 35 65% 55%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
   }
 }
 
@@ -115,42 +86,87 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background text-foreground font-body antialiased min-h-dvh;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight;
+  }
+
+  /* Tech looking numbers */
+  .font-mono-nums {
+    @apply font-mono tabular-nums tracking-tight;
   }
 }
 
 @layer utilities {
-  .font-display {
-    font-family: var(--font-display);
+  .min-h-dvh {
+    min-height: 100dvh;
   }
 
-  .font-body {
-    font-family: var(--font-body);
-  }
-}
-
-@layer components {
-  .reading-day {
-    @apply transition-all duration-300 ease-out cursor-pointer;
+  /* Glassmorphism utilities */
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-xl border border-white/5 shadow-2xl;
   }
 
-  .reading-day:hover {
-    @apply scale-105 shadow-lg;
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 hover:border-white/20 transition-all duration-300;
   }
 
-  .reading-done {
-    @apply bg-[hsl(var(--reading-done))] text-[hsl(var(--success-foreground))];
+  .text-fluid-sm {
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
   }
 
-  .reading-missed {
-    @apply bg-[hsl(var(--reading-missed))] text-[hsl(var(--destructive-foreground))];
+  .text-fluid-base {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
   }
 
-  .reading-neutral {
-    @apply bg-[hsl(var(--reading-neutral))];
+  .text-fluid-lg {
+    font-size: clamp(1.125rem, 3vw, 1.25rem);
+  }
+
+  .text-fluid-xl {
+    font-size: clamp(1.25rem, 4vw, 1.5rem);
+  }
+
+  .text-fluid-2xl {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  @keyframes scale-in {
+    0% {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

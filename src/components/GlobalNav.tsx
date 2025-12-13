@@ -3,9 +3,8 @@ import { cn } from '@/lib/utils';
 import { PieChart, Grid3X3, BarChart2 } from 'lucide-react';
 
 const navItems = [
-  { to: '/panoramica', label: 'Panoramica', icon: PieChart },
+  { to: '/stats', label: 'Statistiche', icon: BarChart2 },
   { to: '/mappa', label: 'Mappa', icon: Grid3X3 },
-  { to: '/mensile', label: 'Mensile', icon: BarChart2 },
 ];
 
 export function GlobalNav() {
