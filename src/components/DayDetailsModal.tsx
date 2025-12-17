@@ -26,6 +26,13 @@ export function DayDetailsModal({
 }: DayDetailsModalProps) {
     if (!date) return null;
 
+    const dateKey = format(date, 'yyyy-MM-dd');
+    const validHabits = habits.filter(h => {
+        const isStarted = h.start_date <= dateKey;
+        const isNotEnded = !h.end_date || h.end_date >= dateKey;
+        return isStarted && isNotEnded;
+    });
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[400px]">
@@ -41,7 +48,7 @@ export function DayDetailsModal({
                 <div className="py-2">
                     <ScrollArea className="max-h-[60vh]">
                         <div className="space-y-3 pr-4">
-                            {habits.map((habit) => {
+                            {validHabits.map((habit) => {
                                 const status = dayRecord[habit.id];
                                 const isDone = status === 'done';
                                 const isMissed = status === 'missed';

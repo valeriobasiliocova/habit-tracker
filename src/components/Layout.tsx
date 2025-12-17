@@ -1,5 +1,5 @@
 import { Outlet, Link } from 'react-router-dom';
-import { BookOpen } from 'lucide-react';
+
 import { GlobalNav } from './GlobalNav';
 
 export function Layout() {
@@ -11,7 +11,7 @@ export function Layout() {
         <div className="h-16 flex items-center justify-between px-4 sm:px-8 max-w-[2400px] mx-auto w-full">
           <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
             <div className="bg-primary/10 p-1.5 sm:p-2 rounded-lg border border-primary/20 group-hover:border-primary/50 transition-colors">
-              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <img src="/logo.png" alt="Mattioli.OS Logo" className="h-4 w-4 sm:h-5 sm:w-5 object-contain" />
             </div>
             <span className="font-display font-bold text-base sm:text-lg tracking-tight group-hover:text-primary transition-colors">
               Mattioli.OS

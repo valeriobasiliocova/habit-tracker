@@ -67,14 +67,21 @@ export function HabitCalendar({ habits, records, onToggleHabit }: HabitCalendarP
             const dayRecord = records[dateKey] || {};
             const future = isFuture(day);
 
+            // Filter habits valid for this date
+            const validHabits = habits.filter(h => {
+                const isStarted = h.start_date <= dateKey;
+                const isNotEnded = !h.end_date || h.end_date >= dateKey;
+                return isStarted && isNotEnded;
+            });
+
             // Calculate daily progress
-            const completedCount = habits.filter(h => dayRecord[h.id] === 'done').length;
-            const missedCount = habits.filter(h => dayRecord[h.id] === 'missed').length; // Tracked but failed
+            const completedCount = validHabits.filter(h => dayRecord[h.id] === 'done').length;
+            const missedCount = validHabits.filter(h => dayRecord[h.id] === 'missed').length; // Tracked but failed
             const markedCount = completedCount + missedCount;
 
             // Percentage based on TOTAL habits, not just marked ones, for "Today's Goal" feel?
             // User said "number of tasks to complete". That implies total habits.
-            const totalHabits = habits.length;
+            const totalHabits = validHabits.length;
             let completionPct = 0;
             if (totalHabits > 0) {
                 completionPct = completedCount / totalHabits;
@@ -133,7 +140,7 @@ export function HabitCalendar({ habits, records, onToggleHabit }: HabitCalendarP
 
                     {/* Dots Indicator - Refined for tech look */}
                     <div className="flex flex-wrap items-center justify-center gap-0.5 px-1 w-full max-w-[80%]">
-                        {habits.map(habit => {
+                        {validHabits.map(habit => {
                             const status = dayRecord[habit.id];
                             if (!status) return null;
 

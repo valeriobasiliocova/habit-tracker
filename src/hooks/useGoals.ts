@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Goal, GoalLog, GoalStatus, GoalLogsMap } from '@/types/goals';
 import { toast } from 'sonner';
+import { getLocalDateKey, isDateInGoalRange } from '@/lib/date-utils';
 
 export function useGoals() {
     const queryClient = useQueryClient();
@@ -82,25 +83,63 @@ export function useGoals() {
     });
 
     // DELETE GOAL
+    // DELETE GOAL (Smart Delete)
     const deleteGoalMutation = useMutation({
         mutationFn: async (goalId: string) => {
-            const { error } = await supabase
-                .from('goals')
-                .delete()
-                .eq('id', goalId);
-            if (error) throw error;
+            // 1. Check for logs
+            const { count, error: countError } = await supabase
+                .from('goal_logs')
+                .select('*', { count: 'exact', head: true })
+                .eq('goal_id', goalId);
+
+            if (countError) throw countError;
+
+            if (count && count > 0) {
+                // 2a. Soft Delete (Archive) if logs exist
+                const { error } = await supabase
+                    .from('goals')
+                    .update({ end_date: new Date().toISOString().split('T')[0] } as any)
+                    .eq('id', goalId);
+
+                if (error) throw error;
+            } else {
+                // 2b. Hard Delete if no logs
+                const { error } = await supabase
+                    .from('goals')
+                    .delete()
+                    .eq('id', goalId);
+
+                if (error) throw error;
+            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['goals'] });
             toast.success('Obiettivo eliminato');
         },
+        onError: (e: any) => {
+            toast.error('Errore eliminazione: ' + e.message);
+        }
     });
 
     // TOGGLE STATUS
     const toggleLogMutation = useMutation({
         mutationFn: async ({ goalId, date, currentStatus }: { goalId: string, date: Date, currentStatus: GoalStatus }) => {
-            const dateStr = date.toISOString().split('T')[0];
-            const { data: { session } } = await supabase.auth.getSession(); // Get session for user_id
+            // Use local date key instead of ISO string (which might be yesterday in UTC)
+            const dateStr = getLocalDateKey(date);
+            const { data: { session } } = await supabase.auth.getSession();
+
+            // Fetch goal to verify range
+            const { data: goal, error: goalError } = await supabase
+                .from('goals')
+                .select('start_date, end_date')
+                .eq('id', goalId)
+                .single();
+
+            if (goalError) throw goalError;
+
+            if (!isDateInGoalRange(dateStr, goal.start_date, goal.end_date)) {
+                throw new Error('Impossibile modificare un obiettivo fuori dal suo periodo di validità.');
+            }
 
             // Logic: None -> Done -> Missed -> None
             let nextStatus: GoalStatus = 'done';
@@ -123,7 +162,7 @@ export function useGoals() {
                         goal_id: goalId,
                         date: dateStr,
                         status: nextStatus,
-                        user_id: session?.user.id // Add user_id if session exists (it should)
+                        user_id: session?.user.id
                     } as any, { onConflict: 'goal_id, date' });
                 if (error) throw error;
             }
@@ -133,7 +172,7 @@ export function useGoals() {
         onMutate: async ({ goalId, date, currentStatus }) => {
             await queryClient.cancelQueries({ queryKey: ['goal_logs'] });
             const previousLogs = queryClient.getQueryData<GoalLog[]>(['goal_logs']);
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = getLocalDateKey(date);
 
             let nextStatus: GoalStatus = 'done';
             if (currentStatus === 'done') nextStatus = 'missed';
@@ -176,7 +215,7 @@ export function useGoals() {
         createGoal: createGoalMutation.mutate,
         deleteGoal: deleteGoalMutation.mutate,
         toggleGoal: (date: Date, goalId: string) => {
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = getLocalDateKey(date);
             const currentStatus = logsMap[dateStr]?.[goalId] || null;
             toggleLogMutation.mutate({ goalId, date, currentStatus });
         }

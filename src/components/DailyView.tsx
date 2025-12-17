@@ -15,6 +15,13 @@ export function DailyView({ habits, records, onToggleHabit }: DailyViewProps) {
     const dateKey = today.toISOString().split('T')[0];
     const dayRecord = records[dateKey] || {};
 
+    // Filter habits valid for today
+    const validHabits = habits.filter(h => {
+        const isStarted = h.start_date <= dateKey;
+        const isNotEnded = !h.end_date || h.end_date >= dateKey;
+        return isStarted && isNotEnded;
+    });
+
     return (
         <div className="glass-panel rounded-3xl p-6 animate-scale-in max-w-lg mx-auto w-full">
             <div className="text-center mb-8">
@@ -23,13 +30,13 @@ export function DailyView({ habits, records, onToggleHabit }: DailyViewProps) {
             </div>
 
             <div className="space-y-3">
-                {habits.length === 0 && (
+                {validHabits.length === 0 && (
                     <div className="text-center py-12 border border-dashed border-white/10 rounded-xl">
                         <p className="text-muted-foreground">Nessun obiettivo per oggi.</p>
                         <p className="text-xs text-muted-foreground/60 mt-1">Aggiungine alcuni dalle impostazioni.</p>
                     </div>
                 )}
-                {habits.map(habit => {
+                {validHabits.map(habit => {
                     const status = dayRecord[habit.id];
                     return (
                         <div

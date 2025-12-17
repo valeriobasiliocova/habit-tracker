@@ -43,7 +43,13 @@ export function WeeklyView({ habits, records, onToggleHabit }: WeeklyViewProps) 
                             {/* Habits Column caused by grid */}
                             <div className="flex flex-col gap-2">
                                 {habits.map(habit => {
-                                    const status = dayRecord[habit.id];
+                                    const isStarted = habit.start_date <= dateKey;
+                                    const isEnded = habit.end_date && habit.end_date < dateKey;
+
+                                    if (!isStarted || isEnded) {
+                                        return <div key={habit.id} className="aspect-square rounded-xl invisible" />;
+                                    }
+
                                     return (
                                         <button
                                             key={habit.id}

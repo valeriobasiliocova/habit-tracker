@@ -57,7 +57,7 @@ export function HabitSettings({ habits, onAddHabit, onRemoveHabit }: HabitSettin
                     <Settings className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] bg-[#0a0a0a]/90 backdrop-blur-2xl border-white/10 text-foreground">
                 <DialogHeader>
                     <DialogTitle>Gestisci Abitudini</DialogTitle>
                     <DialogDescription>
@@ -65,81 +65,101 @@ export function HabitSettings({ habits, onAddHabit, onRemoveHabit }: HabitSettin
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
+                <div className="space-y-8 py-4">
                     {/* Add New Habit Form */}
-                    <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
-                        <h4 className="text-sm font-medium leading-none">Nuova Abitudine</h4>
+                    <div className="space-y-4 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                                <Plus className="h-4 w-4" />
+                            </div>
+                            <h4 className="text-sm font-display font-bold">Nuova Abitudine</h4>
+                        </div>
+
                         <div className="grid gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="title">Nome</Label>
+                            <div className="space-y-2">
+                                <Label htmlFor="title" className="text-xs uppercase tracking-wider text-muted-foreground ml-1">Nome</Label>
                                 <Input
                                     id="title"
                                     placeholder="Es. Palestra, Lettura..."
                                     value={newHabitTitle}
                                     onChange={(e) => setNewHabitTitle(e.target.value)}
+                                    className="bg-black/20 border-white/10 focus:border-primary/50 text-foreground placeholder:text-muted-foreground/50 h-10 rounded-xl"
                                 />
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="color">Colore</Label>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="color" className="text-xs uppercase tracking-wider text-muted-foreground ml-1">Colore</Label>
                                 <Select value={newHabitColor} onValueChange={setNewHabitColor}>
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger className="w-full bg-black/20 border-white/10 h-10 rounded-xl">
                                         <SelectValue placeholder="Seleziona colore" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        {PRESET_COLORS.map((color) => (
-                                            <SelectItem key={color.value} value={color.value}>
-                                                <div className="flex items-center gap-2">
-                                                    <div
-                                                        className="h-3 w-3 rounded-full"
-                                                        style={{ backgroundColor: color.value }}
-                                                    />
-                                                    {color.name}
-                                                </div>
-                                            </SelectItem>
-                                        ))}
+                                    <SelectContent className="bg-[#1a1a1a] border-white/10 backdrop-blur-xl">
+                                        <div className="grid grid-cols-2 gap-1 p-1">
+                                            {PRESET_COLORS.map((color) => (
+                                                <SelectItem
+                                                    key={color.value}
+                                                    value={color.value}
+                                                    className="rounded-lg hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <div
+                                                            className="h-3 w-3 rounded-full shadow-[0_0_8px_currentColor]"
+                                                            style={{ backgroundColor: color.value, color: color.value }}
+                                                        />
+                                                        <span className="font-medium">{color.name}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </div>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button onClick={handleAdd} disabled={!newHabitTitle.trim()}>
-                                <Plus className="mr-2 h-4 w-4" /> Aggiungi
+
+                            <Button
+                                onClick={handleAdd}
+                                disabled={!newHabitTitle.trim()}
+                                className="w-full rounded-xl"
+                            >
+                                Aggiungi al Protocollo
                             </Button>
                         </div>
                     </div>
 
                     {/* List of Existing Habits */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium leading-none mb-3">Le tue Abitudini</h4>
-                        <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                            <div className="space-y-3">
+                    <div className="space-y-4">
+                        <h4 className="text-sm font-display font-bold px-1">Le tue Abitudini</h4>
+                        <ScrollArea className="h-[240px] w-full rounded-2xl border border-white/5 bg-black/20 p-4">
+                            <div className="space-y-2">
                                 {habits.map((habit) => (
                                     <div
                                         key={habit.id}
-                                        className="flex items-center justify-between rounded-md p-2 hover:bg-muted/50 transition-colors"
+                                        className="group flex items-center justify-between rounded-xl p-3 bg-white/5 border border-transparent hover:border-white/10 hover:bg-white/10 transition-all"
                                     >
                                         <div className="flex items-center gap-3">
                                             <div
-                                                className="h-4 w-4 rounded-full"
-                                                style={{ backgroundColor: habit.color }}
+                                                className="h-3 w-3 rounded-full shadow-[0_0_8px_currentColor]"
+                                                style={{ backgroundColor: habit.color, color: habit.color }}
                                             />
                                             <span className="text-sm font-medium">{habit.title}</span>
                                         </div>
 
-                                        {habits.length > 1 && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                onClick={() => onRemoveHabit(habit.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        )}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:text-destructive hover:bg-destructive/10 transition-all rounded-lg"
+                                            onClick={() => onRemoveHabit(habit.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 ))}
                                 {habits.length === 0 && (
-                                    <p className="text-sm text-muted-foreground text-center py-4">
-                                        Nessuna abitudine definita.
-                                    </p>
+                                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground space-y-2">
+                                        <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">
+                                            <Plus className="h-5 w-5 opacity-50" />
+                                        </div>
+                                        <p className="text-sm">Nessuna abitudine definita.</p>
+                                    </div>
                                 )}
                             </div>
                         </ScrollArea>
