@@ -127,115 +127,150 @@ export function useGoals() {
     });
 
     const softDelete = async (goalId: string) => {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
         const { error } = await (supabase
             .from('goals') as any)
-            .update({ end_date: new Date().toISOString().split('T')[0] })
+            .update({ end_date: yesterday.toISOString().split('T')[0] })
             .eq('id', goalId);
-        if (error) throw error;
     }
+});
 
-    const activeGoals = (goals || []).filter(g => !g.end_date || g.end_date >= new Date().toISOString().split('T')[0]);
+// HARD RESET
+const resetAllDataMutation = useMutation({
+    mutationFn: async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Not authenticated');
 
-    // TOGGLE STATUS
-    const toggleLogMutation = useMutation({
-        mutationFn: async ({ goalId, date, currentStatus }: { goalId: string, date: Date, currentStatus: GoalStatus }) => {
-            // Use local date key instead of ISO string (which might be yesterday in UTC)
-            const dateStr = getLocalDateKey(date);
-            const { data: { session } } = await supabase.auth.getSession();
+        // Delete all goals (logs should cascade, but we can verify)
+        // Using delete on 'goals' where user_id matches
+        const { error } = await supabase
+            .from('goals')
+            .delete()
+            .eq('user_id', session.user.id);
 
-            // Fetch goal to verify range
-            const { data: goal, error: goalError } = await supabase
-                .from('goals')
-                .select('start_date, end_date')
-                .eq('id', goalId)
-                .single();
+        if (error) throw error;
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['goals'] });
+        queryClient.invalidateQueries({ queryKey: ['goal_logs'] });
+        toast.success('Reset completo effettuato');
+    },
+    onError: (e: any) => {
+        toast.error('Errore reset: ' + e.message);
+    }
+});
 
-            if (goalError || !goal) throw goalError || new Error('Goal not found');
-            const goalData = goal as any;
+return {
+    goals: activeGoals, // Return Filtered Active Goals by default
+    allGoals: goals || [], // Return all if needed
+    logs: logsMap, // Returns the convenient Map
+    rawLogs: logs || [], // Returns raw array if needed
+    isLoading: isLoadingGoals || isLoadingLogs,
+    createGoal: createGoalMutation.mutate,
+    deleteGoal: deleteGoalMutation.mutate,
+    isDeleting: deleteGoalMutation.isPending,
+    resetAllData: resetAllDataMutation.mutate,
+    isResetting: resetAllDataMutation.isPending,
+    toggleGoal: (date: Date, goalId: string) => {
+        // Use local date key instead of ISO string (which might be yesterday in UTC)
+        const dateStr = getLocalDateKey(date);
+        const { data: { session } } = await supabase.auth.getSession();
 
-            if (!isDateInGoalRange(dateStr, goalData.start_date, goalData.end_date)) {
-                throw new Error('Impossibile modificare un obiettivo fuori dal suo periodo di validità.');
-            }
+        // Fetch goal to verify range
+        const { data: goal, error: goalError } = await supabase
+            .from('goals')
+            .select('start_date, end_date')
+            .eq('id', goalId)
+            .single();
 
-            // Logic: None -> Done -> Missed -> None
-            let nextStatus: GoalStatus = 'done';
-            if (currentStatus === 'done') nextStatus = 'missed';
-            else if (currentStatus === 'missed') nextStatus = null;
+        if (goalError || !goal) throw goalError || new Error('Goal not found');
+        const goalData = goal as any;
 
-            if (nextStatus === null) {
-                // Delete log
-                const { error } = await supabase
-                    .from('goal_logs')
-                    .delete()
-                    .eq('goal_id', goalId)
-                    .eq('date', dateStr);
-                if (error) throw error;
-            } else {
-                // Upsert log
-                const { error } = await supabase
-                    .from('goal_logs')
-                    .upsert({
-                        goal_id: goalId,
-                        date: dateStr,
-                        status: nextStatus,
-                        user_id: session?.user.id
-                    } as any, { onConflict: 'goal_id, date' });
-                if (error) throw error;
-            }
-            return { goalId, dateStr, nextStatus };
-        },
-        // Optimistic Update
-        onMutate: async ({ goalId, date, currentStatus }) => {
-            await queryClient.cancelQueries({ queryKey: ['goal_logs'] });
-            const previousLogs = queryClient.getQueryData<GoalLog[]>(['goal_logs']);
-            const dateStr = getLocalDateKey(date);
-
-            let nextStatus: GoalStatus = 'done';
-            if (currentStatus === 'done') nextStatus = 'missed';
-            else if (currentStatus === 'missed') nextStatus = null;
-
-            queryClient.setQueryData<GoalLog[]>(['goal_logs'], (old) => {
-                if (!old) return [];
-                // Remove existing
-                const filtered = old.filter(l => !(l.goal_id === goalId && l.date === dateStr));
-                if (nextStatus) {
-                    // Add new
-                    return [...filtered, {
-                        id: 'temp-' + Date.now(),
-                        goal_id: goalId,
-                        date: dateStr,
-                        status: nextStatus,
-                        created_at: '',
-                        updated_at: ''
-                    }];
-                }
-                return filtered;
-            });
-
-            return { previousLogs };
-        },
-        onError: (err, newTodo, context) => {
-            queryClient.setQueryData(['goal_logs'], context?.previousLogs);
-            toast.error('Errore aggiornamento');
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['goal_logs'] });
-        },
-    });
-
-    return {
-        goals: activeGoals, // Return Filtered Active Goals by default
-        allGoals: goals || [], // Return all if needed
-        logs: logsMap, // Returns the convenient Map
-        rawLogs: logs || [], // Returns raw array if needed
-        isLoading: isLoadingGoals || isLoadingLogs,
-        createGoal: createGoalMutation.mutate,
-        deleteGoal: deleteGoalMutation.mutate,
-        isDeleting: deleteGoalMutation.isPending,
-        toggleGoal: (date: Date, goalId: string) => {
-            const dateStr = getLocalDateKey(date);
-            const currentStatus = logsMap[dateStr]?.[goalId] || null;
-            toggleLogMutation.mutate({ goalId, date, currentStatus });
+        if (!isDateInGoalRange(dateStr, goalData.start_date, goalData.end_date)) {
+            throw new Error('Impossibile modificare un obiettivo fuori dal suo periodo di validità.');
         }
-    };
+
+        // Logic: None -> Done -> Missed -> None
+        let nextStatus: GoalStatus = 'done';
+        if (currentStatus === 'done') nextStatus = 'missed';
+        else if (currentStatus === 'missed') nextStatus = null;
+
+        if (nextStatus === null) {
+            // Delete log
+            const { error } = await supabase
+                .from('goal_logs')
+                .delete()
+                .eq('goal_id', goalId)
+                .eq('date', dateStr);
+            if (error) throw error;
+        } else {
+            // Upsert log
+            const { error } = await supabase
+                .from('goal_logs')
+                .upsert({
+                    goal_id: goalId,
+                    date: dateStr,
+                    status: nextStatus,
+                    user_id: session?.user.id
+                } as any, { onConflict: 'goal_id, date' });
+            if (error) throw error;
+        }
+        return { goalId, dateStr, nextStatus };
+    },
+    // Optimistic Update
+    onMutate: async ({ goalId, date, currentStatus }) => {
+        await queryClient.cancelQueries({ queryKey: ['goal_logs'] });
+        const previousLogs = queryClient.getQueryData<GoalLog[]>(['goal_logs']);
+        const dateStr = getLocalDateKey(date);
+
+        let nextStatus: GoalStatus = 'done';
+        if (currentStatus === 'done') nextStatus = 'missed';
+        else if (currentStatus === 'missed') nextStatus = null;
+
+        queryClient.setQueryData<GoalLog[]>(['goal_logs'], (old) => {
+            if (!old) return [];
+            // Remove existing
+            const filtered = old.filter(l => !(l.goal_id === goalId && l.date === dateStr));
+            if (nextStatus) {
+                // Add new
+                return [...filtered, {
+                    id: 'temp-' + Date.now(),
+                    goal_id: goalId,
+                    date: dateStr,
+                    status: nextStatus,
+                    created_at: '',
+                    updated_at: ''
+                }];
+            }
+            return filtered;
+        });
+
+        return { previousLogs };
+    },
+    onError: (err, newTodo, context) => {
+        queryClient.setQueryData(['goal_logs'], context?.previousLogs);
+        toast.error('Errore aggiornamento');
+    },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: ['goal_logs'] });
+    },
+});
+
+return {
+    goals: activeGoals, // Return Filtered Active Goals by default
+    allGoals: goals || [], // Return all if needed
+    logs: logsMap, // Returns the convenient Map
+    rawLogs: logs || [], // Returns raw array if needed
+    isLoading: isLoadingGoals || isLoadingLogs,
+    createGoal: createGoalMutation.mutate,
+    deleteGoal: deleteGoalMutation.mutate,
+    isDeleting: deleteGoalMutation.isPending,
+    toggleGoal: (date: Date, goalId: string) => {
+        const dateStr = getLocalDateKey(date);
+        const currentStatus = logsMap[dateStr]?.[goalId] || null;
+        toggleLogMutation.mutate({ goalId, date, currentStatus });
+    }
+};
 }

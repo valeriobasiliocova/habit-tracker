@@ -4,10 +4,19 @@ import { WeeklyView } from '@/components/WeeklyView';
 import { DailyView } from '@/components/DailyView';
 import { HabitSettings } from '@/components/HabitSettings';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutGrid, Calendar, ListTodo, Download } from 'lucide-react';
-import { useGoals } from '@/hooks/useGoals';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { LayoutGrid, Calendar, ListTodo, Download, Trash2 } from 'lucide-react';
 
 const Index = () => {
   const {
@@ -18,7 +27,9 @@ const Index = () => {
     createGoal,
     deleteGoal,
     toggleGoal,
-    isDeleting
+    isDeleting,
+    resetAllData,
+    isResetting
   } = useGoals();
 
   const handleExport = () => {
@@ -103,6 +114,39 @@ const Index = () => {
               >
                 <Download className="h-4 w-4" />
               </Button>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 sm:h-9 sm:w-9 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                    title="Hard Reset (Elimina tutto)"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-destructive">Hard Reset: Attenzione!</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Questa azione eliminerà <strong>definitivamente</strong> tutte le tue abitudini e tutto lo storico dei progressi.
+                      <br /><br />
+                      I dati non potranno essere recuperati. Sei sicuro di voler procedere?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annulla</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => resetAllData()}
+                      className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                      disabled={isResetting}
+                    >
+                      {isResetting ? 'Eliminazione...' : 'Conferma Reset Totale'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
 
