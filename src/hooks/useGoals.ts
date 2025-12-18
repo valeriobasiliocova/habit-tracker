@@ -96,20 +96,24 @@ export function useGoals() {
 
             if (count && count > 0) {
                 // 2a. Soft Delete (Archive) if logs exist
-                const { error } = await supabase
-                    .from('goals')
-                    .update({ end_date: new Date().toISOString().split('T')[0] } as any)
-                    .eq('id', goalId);
-
-                if (error) throw error;
+                await softDelete(goalId);
             } else {
-                // 2b. Hard Delete if no logs
-                const { error } = await supabase
-                    .from('goals')
-                    .delete()
-                    .eq('id', goalId);
+                try {
+                    // 2b. Hard Delete if no logs
+                    const { error } = await supabase
+                        .from('goals')
+                        .delete()
+                        .eq('id', goalId);
 
-                if (error) throw error;
+                    if (error) {
+                        // If generic error (e.g. FK violation due to race condition), fallback to soft delete
+                        console.warn('Hard delete failed, falling back to soft delete', error);
+                        await softDelete(goalId);
+                    }
+                } catch (e) {
+                    console.warn('Hard delete exception, falling back to soft delete', e);
+                    await softDelete(goalId);
+                }
             }
         },
         onSuccess: () => {
@@ -120,6 +124,16 @@ export function useGoals() {
             toast.error('Errore eliminazione: ' + e.message);
         }
     });
+
+    const softDelete = async (goalId: string) => {
+        const { error } = await supabase
+            .from('goals')
+            .update({ end_date: new Date().toISOString().split('T')[0] } as any)
+            .eq('id', goalId);
+        if (error) throw error;
+    }
+
+    const activeGoals = (goals || []).filter(g => !g.end_date || g.end_date >= new Date().toISOString().split('T')[0]);
 
     // TOGGLE STATUS
     const toggleLogMutation = useMutation({
@@ -208,12 +222,14 @@ export function useGoals() {
     });
 
     return {
-        goals: goals || [],
+        goals: activeGoals, // Return Filtered Active Goals by default
+        allGoals: goals || [], // Return all if needed
         logs: logsMap, // Returns the convenient Map
         rawLogs: logs || [], // Returns raw array if needed
         isLoading: isLoadingGoals || isLoadingLogs,
         createGoal: createGoalMutation.mutate,
         deleteGoal: deleteGoalMutation.mutate,
+        isDeleting: deleteGoalMutation.isPending,
         toggleGoal: (date: Date, goalId: string) => {
             const dateStr = getLocalDateKey(date);
             const currentStatus = logsMap[dateStr]?.[goalId] || null;

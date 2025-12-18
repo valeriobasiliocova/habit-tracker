@@ -4,17 +4,69 @@ import { WeeklyView } from '@/components/WeeklyView';
 import { DailyView } from '@/components/DailyView';
 import { HabitSettings } from '@/components/HabitSettings';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LayoutGrid, Calendar, ListTodo } from 'lucide-react';
+import { LayoutGrid, Calendar, ListTodo, Download } from 'lucide-react';
 import { useGoals } from '@/hooks/useGoals';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const {
     goals,
     logs: records, // Alias to keep prop compatibility
+    allGoals,
+    rawLogs,
     createGoal,
     deleteGoal,
-    toggleGoal
+    toggleGoal,
+    isDeleting
   } = useGoals();
+
+  const handleExport = () => {
+    if (!rawLogs || !allGoals) {
+      toast.error("Nessun dato da esportare");
+      return;
+    }
+
+    try {
+      // Create a map for quick goal title lookup
+      const goalMap = new Map(allGoals.map(g => [g.id, g.title]));
+
+      // CSV Header
+      const csvRows = ['Date,Habit Name,Status,Value,Notes'];
+
+      // CSV Rows
+      rawLogs.forEach(log => {
+        const goalName = goalMap.get(log.goal_id) || 'Archived Habit';
+        // Excel/CSV escaping: quotes must be doubled, and fields containing commas/quotes wrapped in quotes
+        const escape = (text: string) => `"${text.replace(/"/g, '""')}"`;
+
+        const row = [
+          log.date,
+          escape(goalName),
+          log.status,
+          log.value || '',
+          log.notes ? escape(log.notes) : ''
+        ].join(',');
+        csvRows.push(row);
+      });
+
+      // Create Blob and download
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `habit-tracker-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Export completato!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Errore durante l\'export');
+    }
+  };
 
   const [view, setView] = useState("month");
 
@@ -35,12 +87,22 @@ const Index = () => {
               <p className="text-muted-foreground text-sm">Esecuzione giornaliera.</p>
             </div>
 
-            <div className="pt-4 border-t border-white/5">
+            <div className="pt-4 border-t border-white/5 flex gap-2">
               <HabitSettings
                 habits={goals}
                 onAddHabit={createGoal}
                 onRemoveHabit={deleteGoal}
+                isDeleting={isDeleting}
               />
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 sm:h-9 sm:w-9"
+                onClick={handleExport}
+                title="Esporta dati CSV"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 

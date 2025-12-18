@@ -4,6 +4,8 @@ import { StatsOverview } from '@/components/stats/StatsOverview';
 import { ActivityHeatmap } from '@/components/stats/ActivityHeatmap';
 import { TrendChart } from '@/components/stats/TrendChart';
 import { HabitRadar } from '@/components/stats/HabitRadar';
+import { DayOfWeekChart } from '@/components/stats/DayOfWeekChart';
+import { Trophy } from 'lucide-react';
 
 const Stats = () => {
     const { goals, logs } = useGoals();
@@ -36,7 +38,7 @@ const Stats = () => {
                 <ActivityHeatmap data={stats.heatmapData} />
             </div>
 
-            {/* Charts Row */}
+            {/* Charts Row 1: Trends & Radar */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="glass-panel rounded-3xl p-6 h-[400px] flex flex-col">
                     <h3 className="text-lg font-display font-semibold mb-4">Trend Settimanale</h3>
@@ -49,6 +51,20 @@ const Stats = () => {
                     <div className="flex-1 w-full min-h-0">
                         <HabitRadar stats={stats.habitStats} />
                     </div>
+                </div>
+            </div>
+
+            {/* Charts Row 2: Best Day Analysis */}
+            <div className="glass-panel rounded-3xl p-6">
+                <div className="mb-6">
+                    <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-sm bg-primary animate-pulse" />
+                        Costanza Settimanale
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Scopri in quali giorni sei più produttivo.</p>
+                </div>
+                <div className="h-[250px] w-full">
+                    <DayOfWeekChart data={stats.weekdayStats} />
                 </div>
             </div>
 
@@ -74,6 +90,12 @@ const Stats = () => {
                                     </div>
                                 </div>
                                 <div className="flex gap-8 text-sm text-muted-foreground text-right">
+                                    <div className="hidden sm:flex flex-col items-end">
+                                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5 flex items-center gap-1">
+                                            <Trophy className="w-3 h-3 text-yellow-500" /> Best
+                                        </span>
+                                        <span className="font-mono text-xl font-bold text-foreground">{habit.longestStreak} <span className="text-xs font-sans font-normal opacity-50">gg</span></span>
+                                    </div>
                                     <div className="flex flex-col items-end">
                                         <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Serie</span>
                                         <span className="font-mono text-xl font-bold text-foreground">{habit.currentStreak} <span className="text-xs font-sans font-normal opacity-50">gg</span></span>

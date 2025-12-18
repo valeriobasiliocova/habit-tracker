@@ -12,13 +12,23 @@ interface WeeklyViewProps {
 }
 
 export function WeeklyView({ habits, records, onToggleHabit }: WeeklyViewProps) {
-    const today = new Date();
-    const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+    // Stable today reference to avoid re-calculating weekStart on every render (microseconds shift)
+    const today = useMemo(() => new Date(), []);
+
+    // Stable weekStart
+    const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]); // Monday
+
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
     const weekDays = useMemo(() => {
         return Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
     }, [weekStart]);
+
+    // Memoize the day record for the modal to ensure referential stability if content hasn't changed, 
+    // but here we want IT TO CHANGE if records changes. 
+    // We compute the key explicitly.
+    const selectedDateKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+    const selectedDayRecord = selectedDateKey ? (records[selectedDateKey] || {}) : {};
 
     return (
         <div className="w-full h-full p-6 animate-scale-in">
@@ -89,13 +99,12 @@ export function WeeklyView({ habits, records, onToggleHabit }: WeeklyViewProps) 
                 })}
             </div>
 
-
             <DayDetailsModal
                 isOpen={!!selectedDate}
                 onClose={() => setSelectedDate(null)}
                 date={selectedDate}
                 habits={habits}
-                dayRecord={selectedDate ? (records[format(selectedDate, 'yyyy-MM-dd')] || {}) : {}}
+                dayRecord={selectedDayRecord}
                 onToggleHabit={(habitId) => selectedDate && onToggleHabit(selectedDate, habitId)}
             />
         </div >

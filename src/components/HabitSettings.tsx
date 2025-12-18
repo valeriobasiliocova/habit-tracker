@@ -38,9 +38,22 @@ const PRESET_COLORS = [
     { name: 'Yellow', value: 'hsl(45 90% 45%)' },
 ];
 
-export function HabitSettings({ habits, onAddHabit, onRemoveHabit }: HabitSettingsProps) {
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog" // Manual import as not installed by shadcn yet
+
+export function HabitSettings({ habits, onAddHabit, onRemoveHabit, isDeleting }: HabitSettingsProps & { isDeleting?: boolean }) {
     const [newHabitTitle, setNewHabitTitle] = useState('');
     const [newHabitColor, setNewHabitColor] = useState(PRESET_COLORS[0].value);
+    const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
 
     const handleAdd = () => {
         if (newHabitTitle.trim()) {
@@ -68,6 +81,7 @@ export function HabitSettings({ habits, onAddHabit, onRemoveHabit }: HabitSettin
                 <div className="space-y-8 py-4">
                     {/* Add New Habit Form */}
                     <div className="space-y-4 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+                        {/* ... form content ... */}
                         <div className="flex items-center gap-2 mb-2">
                             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                                 <Plus className="h-4 w-4" />
@@ -143,14 +157,35 @@ export function HabitSettings({ habits, onAddHabit, onRemoveHabit }: HabitSettin
                                             <span className="text-sm font-medium">{habit.title}</span>
                                         </div>
 
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:text-destructive hover:bg-destructive/10 transition-all rounded-lg"
-                                            onClick={() => onRemoveHabit(habit.id)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:text-destructive hover:bg-destructive/10 transition-all rounded-lg"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Stai per rimuovere questa abitudine. Se ha dei dati associati, verrà archiviata per preservare lo storico. Altrimenti verrà eliminata definitivamente.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Annulla</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={() => onRemoveHabit(habit.id)}
+                                                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                                                        disabled={isDeleting}
+                                                    >
+                                                        {isDeleting ? 'Eliminazione...' : 'Conferma elimina'}
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
                                 ))}
                                 {habits.length === 0 && (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -63,7 +64,7 @@ export function HabitCalendar({ habits, records, onToggleHabit }: HabitCalendarP
         // Days
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            const dateKey = date.toISOString().split('T')[0];
+            const dateKey = format(date, 'yyyy-MM-dd');
             const dayRecord = records[dateKey] || {};
             const future = isFuture(day);
 

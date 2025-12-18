@@ -50,7 +50,7 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
 
             // Streaks Calculation
             // We iterate strictly from today backwards for current streak
-            let checkDate = new Date(today);
+            const checkDate = new Date(today);
             let isStreakActive = true;
 
             // Check today first
@@ -228,6 +228,57 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
             trendData.push(dataPoint);
         });
 
+        // 4. Weekday Stats (Day of Week Analysis)
+        const weekdayStats = [0, 0, 0, 0, 0, 0, 0].map((_, i) => ({
+            dayIndex: i, // 0 = Sunday, 1 = Monday ... 6 = Saturday (date-fns standard)
+            dayName: format(new Date(2024, 0, 7 + i), 'EEEE', { locale: it }), // Dummy date to get name. 7th Jan 2024 was Sunday
+            totalActive: 0,
+            totalDone: 0,
+            rate: 0
+        }));
+
+        // Re-iterate logs to populate weekday stats
+        // We need effective denominator: how many times was a goal EXPECTED on a Monday?
+
+        // Strategy: Iterate last 90 days (approx 3 months) to give relevant "recent" stats, not all time.
+        // Or all time? Let's do All Time for robustness if not too heavy.
+
+        // Optimization: We already have goals and logs.
+        // We can just iterate the `allLogDates`? 
+        // No, `allLogDates` only has dates where something happened. We need denominator (misses too).
+
+        // Let's iterate `eachDayOfInterval` from earliest start_date to today.
+        const earliestStart = goals.reduce((min, g) => isBefore(new Date(g.start_date), min) ? new Date(g.start_date) : min, today);
+
+        // Limit to last 365 days max for performance if needed, but JS handles thousands easily.
+        const analysisStart = isAfter(earliestStart, subDays(today, 365)) ? earliestStart : subDays(today, 365);
+
+        if (!isAfter(analysisStart, today)) {
+            eachDayOfInterval({ start: analysisStart, end: today }).forEach(day => {
+                const dayIndex = day.getDay(); // 0-6
+                const key = format(day, 'yyyy-MM-dd');
+
+                goals.forEach(goal => {
+                    // Check range
+                    const gStart = new Date(goal.start_date);
+                    if (isBefore(day, gStart)) return;
+
+                    // Future: check frequency_days here if we implement specific days (e.g. Mon/Wed only)
+                    // If goal.frequency_days exists and doesn't include dayIndex (1-7 adjustment?), skip.
+
+                    weekdayStats[dayIndex].totalActive++;
+
+                    if (logs[key]?.[goal.id] === 'done') {
+                        weekdayStats[dayIndex].totalDone++;
+                    }
+                });
+            });
+        }
+
+        weekdayStats.forEach(stat => {
+            stat.rate = stat.totalActive > 0 ? Math.round((stat.totalDone / stat.totalActive) * 100) : 0;
+        });
+
         // Global Stats
         const totalActiveDays = allLogDates.length; // Approximate
         const globalSuccessRate = habitStats.length > 0
@@ -238,6 +289,14 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
             habitStats,
             heatmapData,
             trendData,
+            weekdayStats: weekdayStats.sort((a, b) => {
+                // Sort to start Monday (1) -> Sunday (0)
+                // Monday is 1, Sunday is 0.
+                // We want 1, 2, 3, 4, 5, 6, 0
+                if (a.dayIndex === 0) return 1;
+                if (b.dayIndex === 0) return -1;
+                return a.dayIndex - b.dayIndex;
+            }),
             globalStats: {
                 totalActiveDays, // This might need better definition
                 globalSuccessRate,
