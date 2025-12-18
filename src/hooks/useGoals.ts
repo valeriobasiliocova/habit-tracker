@@ -141,6 +141,15 @@ export function useGoals() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('Not authenticated');
 
+            // Delete all logs first (to be safe regardless of cascade)
+            const { error: logsError } = await supabase
+                .from('goal_logs')
+                .delete()
+                .eq('user_id', session.user.id);
+
+            if (logsError) throw logsError;
+
+            // Then delete goals
             const { error } = await supabase
                 .from('goals')
                 .delete()
