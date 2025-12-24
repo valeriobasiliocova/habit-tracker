@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Goal, GoalLogsMap } from '@/types/goals';
-import { format, subDays, eachDayOfInterval, differenceInCalendarDays, isBefore, isAfter, startOfDay } from 'date-fns';
+import { format, subDays, subWeeks, subMonths, subYears, eachDayOfInterval, differenceInCalendarDays, isBefore, isAfter, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 export interface HabitStat {
@@ -22,6 +22,20 @@ export interface DayActivity {
 export interface TrendData {
     date: string;
     [habitId: string]: number | string; // percentage
+}
+
+export interface ComparisonStat {
+    previous: number;
+    current: number;
+    change: number;
+    trend: 'up' | 'down' | 'neutral';
+}
+
+export interface HabitComparison {
+    habitId: string;
+    week: ComparisonStat;
+    month: ComparisonStat;
+    year: ComparisonStat;
 }
 
 export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
@@ -294,7 +308,7 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
             ? Math.round(habitStats.reduce((acc, curr) => acc + curr.completionRate, 0) / habitStats.length)
             : 0;
 
-        return {
+        const statsResult = {
             habitStats,
             heatmapData,
             trendData,
@@ -310,8 +324,113 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
                 totalActiveDays, // This might need better definition
                 globalSuccessRate,
                 bestStreak: Math.max(...habitStats.map(h => h.longestStreak), 0)
-            }
+            },
+            comparisons: [] as HabitComparison[] // Placeholder, populated below
+        };
+
+        // 5. Calculate Comparisons
+        // Week
+        const startWeek = startOfWeek(today, { locale: it, weekStartsOn: 1 });
+        const endWeek = endOfWeek(today, { locale: it, weekStartsOn: 1 }); // Actually until today? Usually comparing full weeks is fairer, or "week to date". Let's do week to date.
+        // Doing full previous week vs current week-to-date is skewed. 
+        // Better: Last 7 days vs Previous 7 days? Or ISO Week.
+        // Let's stick with specific ISO windows but cut off 'endCurrent' at 'today' to be fair if we want "to-date".
+        // Actually, simplest and most common is Current Week vs Last Week (full). 
+        // If current week is incomplete, rate is calc on days passed.
+
+        const currentWeekStart = startOfWeek(today, { locale: it, weekStartsOn: 1 });
+        const currentWeekEnd = today; // Up to now
+        const prevWeekStart = subWeeks(currentWeekStart, 1);
+        const prevWeekEnd = subDays(currentWeekStart, 1);
+
+        // Month
+        const currentMonthStart = startOfMonth(today);
+        const currentMonthEnd = today;
+        const prevMonthStart = subMonths(currentMonthStart, 1);
+        const prevMonthEnd = subDays(currentMonthStart, 1); // End of prev month
+
+        // Year
+        const currentYearStart = startOfYear(today);
+        const currentYearEnd = today;
+        const prevYearStart = subYears(currentYearStart, 1);
+        const prevYearEnd = subDays(currentYearStart, 1); // End of prev year
+
+        const weekStats = calculatePeriodStats(goals, logs, currentWeekStart, currentWeekEnd, prevWeekStart, prevWeekEnd, 'week');
+        const monthStats = calculatePeriodStats(goals, logs, currentMonthStart, currentMonthEnd, prevMonthStart, prevMonthEnd, 'month');
+        const yearStats = calculatePeriodStats(goals, logs, currentYearStart, currentYearEnd, prevYearStart, prevYearEnd, 'year');
+
+        const comparisons: HabitComparison[] = goals.map(g => ({
+            habitId: g.id,
+            week: weekStats[g.id],
+            month: monthStats[g.id],
+            year: yearStats[g.id]
+        }));
+
+        // Inject into return object
+        // We can't easily inject cleanly without changing return type or using the object created above
+        return {
+            ...statsResult,
+            comparisons
         };
 
     }, [goals, logs]);
+}
+
+
+
+function calculatePeriodStats(
+    goals: Goal[],
+    logs: GoalLogsMap,
+    startCurrent: Date,
+    endCurrent: Date,
+    startPrev: Date,
+    endPrev: Date,
+    type: 'week' | 'month' | 'year' = 'month'
+): { [habitId: string]: ComparisonStat } {
+    const result: { [habitId: string]: ComparisonStat } = {};
+    const habitIds = goals.map(g => g.id);
+
+    // Helper to calculate rate for a period
+    const calculateRate = (habitId: string, start: Date, end: Date, goalStart: Date) => {
+        // Effective start for this period: max(periodStart, goalStart)
+        const effectiveStart = isBefore(start, goalStart) ? goalStart : start;
+
+        // If effective start is after end, the goal wasn't active yet -> return 0 (or null?)
+        if (isAfter(effectiveStart, end)) return 0;
+
+        let totalDays = 0;
+        let doneDays = 0;
+
+        // Optimization: iterate only effective range
+        eachDayOfInterval({ start: effectiveStart, end }).forEach(day => {
+            totalDays++;
+            const key = format(day, 'yyyy-MM-dd');
+            if (logs[key]?.[habitId] === 'done') doneDays++;
+        });
+
+        return totalDays > 0 ? Math.round((doneDays / totalDays) * 100) : 0;
+    };
+
+    habitIds.forEach(id => {
+        const goal = goals.find(g => g.id === id);
+        if (!goal) return;
+        const gStart = new Date(goal.start_date);
+
+        const currentRate = calculateRate(id, startCurrent, endCurrent, gStart);
+        const prevRate = calculateRate(id, startPrev, endPrev, gStart);
+        const change = currentRate - prevRate;
+
+        let trend: 'up' | 'down' | 'neutral' = 'neutral';
+        if (change > 0) trend = 'up';
+        if (change < 0) trend = 'down';
+
+        result[id] = {
+            previous: prevRate,
+            current: currentRate,
+            change,
+            trend
+        };
+    });
+
+    return result;
 }

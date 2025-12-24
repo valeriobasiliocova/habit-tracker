@@ -5,6 +5,7 @@ import { ActivityHeatmap } from '@/components/stats/ActivityHeatmap';
 import { TrendChart } from '@/components/stats/TrendChart';
 import { HabitRadar } from '@/components/stats/HabitRadar';
 import { DayOfWeekChart } from '@/components/stats/DayOfWeekChart';
+import { PeriodComparison } from '@/components/stats/PeriodComparison';
 import { Trophy } from 'lucide-react';
 
 const Stats = () => {
@@ -37,6 +38,9 @@ const Stats = () => {
                 </h3>
                 <ActivityHeatmap data={stats.heatmapData} />
             </div>
+
+            {/* Period Comparison */}
+            <PeriodComparison comparisons={stats.comparisons} goals={goals} />
 
             {/* Charts Row 1: Trends & Radar */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

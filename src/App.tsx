@@ -8,7 +8,7 @@ import { Layout } from "./components/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Stats from "./pages/Stats";
-import Mappa from "./pages/Mappa";
+
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -60,7 +60,7 @@ const App = () => {
             }>
               <Route path="/" element={<Index />} />
               <Route path="/stats" element={<Stats />} />
-              <Route path="/mappa" element={<Mappa />} />
+
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
