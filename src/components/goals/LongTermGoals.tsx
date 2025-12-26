@@ -62,19 +62,15 @@ const goalColors = [
 export function LongTermGoals() {
     const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-    const [selectedWeek, setSelectedWeek] = useState<number>(1); // Default to week 1, logic can be improved
-    const [view, setView] = useState<GoalType>('annual');
+    // Initialize with current week dynamically
+    const [selectedWeek, setSelectedWeek] = useState<number>(getWeekOfMonth(new Date(), { weekStartsOn: 1 }));
+    // Default view set to weekly as requested
+    const [view, setView] = useState<GoalType>('weekly');
     const [exportScope, setExportScope] = useState<'all' | 'year'>('all');
     const [importReport, setImportReport] = useState<ImportReport | null>(null);
     const [newGoalTitle, setNewGoalTitle] = useState('');
 
     const queryClient = useQueryClient();
-
-    // Helper to calculate current week number
-    useEffect(() => {
-        const currentWeek = getWeekOfMonth(new Date(), { weekStartsOn: 1 }); // ISO 8601 (Monday start)
-        setSelectedWeek(currentWeek);
-    }, []);
 
     const { getLabel } = useGoalCategories();
 

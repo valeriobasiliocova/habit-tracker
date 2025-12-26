@@ -10,6 +10,7 @@ Implementata la funzionalità per visualizzare le statistiche aggregate "Dal 202
 *   **UI Selettore**: Aggiunta l'opzione "Dal 2022" in cima alla lista degli anni.
 *   **Logica Query**: Aggiornato il filtraggio per gestire `'all'` (seleziona default anno corrente per creazione, ma visualizza tutto per stats).
 *   **Backup**: Gestito il caso `'all'` per l'export (default all'anno corrente se scope è 'year').
+*   **Vista di Default**: La pagina si apre automaticamente sulla **Vista Settimanale (Corrente)**, calcolando dinamicamente la settimana in corso, per focalizzare l'utente sull'operatività immediata.
 
 ### 2. `src/components/goals/MacroGoalsStats.tsx`
 *   **Interfaccia Props**: Aggiornata `MacroGoalsStatsProps` per accettare `year: number | string`.
