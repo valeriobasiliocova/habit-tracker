@@ -10,7 +10,9 @@ import { cn } from '@/lib/utils';
 import { MacroGoalsStats } from './MacroGoalsStats';
 import { GoalCategorySettingsDialog } from './GoalCategorySettingsDialog';
 import { useGoalCategories } from '@/hooks/useGoalCategories';
-import { useGoalBackup } from '@/hooks/useGoalBackup';
+import { useGoalBackup, ImportReport } from '@/hooks/useGoalBackup';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -62,6 +64,8 @@ export function LongTermGoals() {
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
     const [selectedWeek, setSelectedWeek] = useState<number>(1); // Default to week 1, logic can be improved
     const [view, setView] = useState<GoalType>('annual');
+    const [exportScope, setExportScope] = useState<'all' | 'year'>('all');
+    const [importReport, setImportReport] = useState<ImportReport | null>(null);
     const [newGoalTitle, setNewGoalTitle] = useState('');
 
     const queryClient = useQueryClient();
@@ -216,7 +220,10 @@ export function LongTermGoals() {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        await importBackup(file);
+        const report = await importBackup(file);
+        if (report) {
+            setImportReport(report);
+        }
 
         // Reset input
         if (fileInputRef.current) {
@@ -229,7 +236,7 @@ export function LongTermGoals() {
         { value: 2, label: 'Febbraio' },
         { value: 3, label: 'Marzo' },
         { value: 4, label: 'Aprile' },
-        { value: 5, label: 'Maggio' },
+        { 'value': 5, 'label': 'Maggio' },
         { value: 6, label: 'Giugno' },
         { value: 7, label: 'Luglio' },
         { value: 8, label: 'Agosto' },
@@ -246,6 +253,118 @@ export function LongTermGoals() {
 
     return (
         <div className="space-y-6 animate-fade-in p-2 md:p-0">
+            {/* Report Dialog */}
+            <AlertDialog open={!!importReport} onOpenChange={(open) => !open && setImportReport(null)}>
+                <AlertDialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Rapporto Importazione</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Ecco il dettaglio delle modifiche apportate ai tuoi dati.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div className="space-y-6 py-4">
+                        {/* Summary Stats Cards */}
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex flex-col items-center justify-center text-center">
+                                <span className="text-3xl font-bold text-green-600 dark:text-green-400">{importReport?.restored.length || 0}</span>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">Nuovi</span>
+                            </div>
+                            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col items-center justify-center text-center">
+                                <span className="text-3xl font-bold text-amber-600 dark:text-amber-400">{importReport?.updated.length || 0}</span>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">Modificati</span>
+                            </div>
+                            <div className="p-4 bg-slate-500/10 border border-slate-500/20 rounded-xl flex flex-col items-center justify-center text-center opacity-70">
+                                <span className="text-3xl font-bold text-slate-600 dark:text-slate-400">{importReport?.unchanged || 0}</span>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">Invariati</span>
+                            </div>
+                        </div>
+
+                        {importReport?.settingsUpdated && (
+                            <div className="flex items-center gap-3 text-sm text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                <span className="flex h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                                <span>Le impostazioni delle categorie sono state aggiornate con successo.</span>
+                            </div>
+                        )}
+
+                        {/* Detailed Lists with Categories */}
+                        <div className="space-y-6">
+                            {/* Restored Section */}
+                            {importReport?.restored && importReport.restored.length > 0 && (
+                                <div className="space-y-3">
+                                    <h4 className="font-semibold flex items-center gap-2 text-green-600 dark:text-green-400">
+                                        <div className="w-2 h-2 rounded-full bg-current" />
+                                        Elementi Aggiunti / Ripristinati
+                                    </h4>
+                                    <div className="space-y-4 pl-4 border-l-2 border-green-100 dark:border-green-900/30">
+                                        {Object.entries(
+                                            (importReport.restored as any[]).reduce((acc: any, goal: any) => {
+                                                const label = getLabel(goal.color || 'default');
+                                                if (!acc[label]) acc[label] = [];
+                                                acc[label].push(goal);
+                                                return acc;
+                                            }, {})
+                                        ).map(([category, goals]: [string, any[]]) => (
+                                            <div key={category} className="space-y-2">
+                                                <div className="text-xs font-bold uppercase text-muted-foreground tracking-widest">{category}</div>
+                                                <div className="grid gap-2">
+                                                    {goals.map(g => (
+                                                        <div key={g.id} className="bg-secondary/40 p-3 rounded-md flex justify-between items-start gap-3 text-sm">
+                                                            <span className="font-medium">{g.title}</span>
+                                                            <span className="shrink-0 text-xs px-2 py-0.5 bg-background rounded border opacity-70">
+                                                                {g.year} • {g.type}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Updated Section */}
+                            {importReport?.updated && importReport.updated.length > 0 && (
+                                <div className="space-y-3">
+                                    <h4 className="font-semibold flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                                        <div className="w-2 h-2 rounded-full bg-current" />
+                                        Elementi Aggiornati
+                                    </h4>
+                                    <div className="space-y-4 pl-4 border-l-2 border-amber-100 dark:border-amber-900/30">
+                                        {Object.entries(
+                                            (importReport.updated as any[]).reduce((acc: any, goal: any) => {
+                                                const label = getLabel(goal.color || 'default');
+                                                if (!acc[label]) acc[label] = [];
+                                                acc[label].push(goal);
+                                                return acc;
+                                            }, {})
+                                        ).map(([category, goals]: [string, any[]]) => (
+                                            <div key={category} className="space-y-2">
+                                                <div className="text-xs font-bold uppercase text-muted-foreground tracking-widest">{category}</div>
+                                                <div className="grid gap-2">
+                                                    {goals.map(g => (
+                                                        <div key={g.id} className="bg-secondary/40 p-3 rounded-md flex justify-between items-start gap-3 text-sm">
+                                                            <span className="font-medium">{g.title}</span>
+                                                            <span className="shrink-0 text-xs px-2 py-0.5 bg-background rounded border opacity-70">
+                                                                {g.year} • {g.type}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setImportReport(null)}>Chiudi Report</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             {/* Header / Nav */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 
@@ -354,16 +473,36 @@ export function LongTermGoals() {
                                 <Download className="w-4 h-4" />
                             </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="sm:max-w-md">
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
+                                <AlertDialogTitle>Backup Obiettivi</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Stai per scaricare un backup completo (JSON) contenente TUTTI i tuoi obiettivi e le personalizzazioni delle categorie.
+                                    Crea un backup dei tuoi obiettivi e impostazioni. I file sono in formato JSON.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
+
+                            <div className="py-4">
+                                <RadioGroup value={exportScope} onValueChange={(v: 'all' | 'year') => setExportScope(v)}>
+                                    <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-accent cursor-pointer" onClick={() => setExportScope('all')}>
+                                        <RadioGroupItem value="all" id="r1" />
+                                        <Label htmlFor="r1" className="cursor-pointer flex-1">
+                                            <div className="font-medium">Esporta Tutto</div>
+                                            <div className="text-xs text-muted-foreground">Tutti gli anni, mesi e impostazioni</div>
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-accent cursor-pointer" onClick={() => setExportScope('year')}>
+                                        <RadioGroupItem value="year" id="r2" />
+                                        <Label htmlFor="r2" className="cursor-pointer flex-1">
+                                            <div className="font-medium">Solo {selectedYear}</div>
+                                            <div className="text-xs text-muted-foreground">Solo obiettivi di questo anno e impostazioni</div>
+                                        </Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Annulla</AlertDialogCancel>
-                                <AlertDialogAction onClick={exportBackup} disabled={isExporting}>
+                                <AlertDialogAction onClick={() => exportBackup({ scope: exportScope, year: selectedYear })} disabled={isExporting}>
                                     {isExporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                                     Scarica Backup
                                 </AlertDialogAction>
