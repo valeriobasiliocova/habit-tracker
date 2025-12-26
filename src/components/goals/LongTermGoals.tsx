@@ -39,7 +39,19 @@ interface LongTermGoal {
     month: number | null;
     week_number: number | null;
     created_at: string;
+    color: string | null;
 }
+
+const goalColors = [
+    { name: 'Nessuno', value: null, class: 'bg-card/20 border-white/5' },
+    { name: 'Rosso', value: 'red', class: 'bg-rose-500/15 border-rose-500/30 hover:bg-rose-500/25' },
+    { name: 'Arancione', value: 'orange', class: 'bg-orange-500/15 border-orange-500/30 hover:bg-orange-500/25' },
+    { name: 'Giallo', value: 'yellow', class: 'bg-amber-400/15 border-amber-400/30 hover:bg-amber-400/25' },
+    { name: 'Blu', value: 'blue', class: 'bg-blue-600/15 border-blue-600/30 hover:bg-blue-600/25' },
+    { name: 'Viola', value: 'purple', class: 'bg-violet-600/15 border-violet-600/30 hover:bg-violet-600/25' },
+    { name: 'Rosa', value: 'pink', class: 'bg-fuchsia-500/15 border-fuchsia-500/30 hover:bg-fuchsia-500/25' },
+    { name: 'Ciano', value: 'cyan', class: 'bg-cyan-500/15 border-cyan-500/30 hover:bg-cyan-500/25' },
+];
 
 export function LongTermGoals() {
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -64,6 +76,7 @@ export function LongTermGoals() {
                 .eq('type', view)
                 .eq('year', selectedYear)
                 .order('is_completed', { ascending: true })
+                .order('color', { ascending: true, nullsFirst: false }) // Group by color
                 .order('created_at', { ascending: true });
 
             if (view === 'monthly') {
@@ -129,6 +142,19 @@ export function LongTermGoals() {
         },
         onError: () => {
             toast.error('Impossibile eliminare l\'obiettivo');
+        }
+    });
+
+    const updateColorMutation = useMutation({
+        mutationFn: async ({ id, color }: { id: string, color: string | null }) => {
+            const { error } = await supabase.from('long_term_goals').update({ color }).eq('id', id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['longTermGoals'] });
+        },
+        onError: () => {
+            toast.error('Errore aggiornamento colore');
         }
     });
 
@@ -403,7 +429,13 @@ export function LongTermGoals() {
                         </SelectTrigger>
                         <SelectContent>
                             {years.map(y => (
-                                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                                <SelectItem
+                                    key={y}
+                                    value={y.toString()}
+                                    className={y < currentYear ? "text-muted-foreground italic" : "font-medium"}
+                                >
+                                    {y}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -414,9 +446,19 @@ export function LongTermGoals() {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                {months.map(m => (
-                                    <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
-                                ))}
+                                {months.map(m => {
+                                    const currentMonth = new Date().getMonth() + 1;
+                                    const isPastMonth = selectedYear < currentYear || (selectedYear === currentYear && m.value < currentMonth);
+                                    return (
+                                        <SelectItem
+                                            key={m.value}
+                                            value={m.value.toString()}
+                                            className={isPastMonth ? "text-muted-foreground italic" : "font-medium"}
+                                        >
+                                            {m.label}
+                                        </SelectItem>
+                                    );
+                                })}
                             </SelectContent>
                         </Select>
                     )}
@@ -427,9 +469,24 @@ export function LongTermGoals() {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                {weeks.map(w => (
-                                    <SelectItem key={w} value={w.toString()}>Settimana {w}</SelectItem>
-                                ))}
+                                {weeks.map(w => {
+                                    const currentMonth = new Date().getMonth() + 1;
+                                    const currentWeek = getWeekOfMonth(new Date(), { weekStartsOn: 1 });
+
+                                    const isPastWeek = selectedYear < currentYear ||
+                                        (selectedYear === currentYear && selectedMonth < currentMonth) ||
+                                        (selectedYear === currentYear && selectedMonth === currentMonth && w < currentWeek);
+
+                                    return (
+                                        <SelectItem
+                                            key={w}
+                                            value={w.toString()}
+                                            className={isPastWeek ? "text-muted-foreground italic" : "font-medium"}
+                                        >
+                                            Settimana {w}
+                                        </SelectItem>
+                                    );
+                                })}
                             </SelectContent>
                         </Select>
                     )}
@@ -469,35 +526,80 @@ export function LongTermGoals() {
                         Nessun obiettivo impostato per questo periodo.
                     </div>
                 ) : (
-                    goals?.map(goal => (
-                        <div
-                            key={goal.id}
-                            className={cn(
-                                "group flex items-center gap-3 p-4 rounded-xl border border-white/5 bg-card/20 transition-all hover:bg-card/40",
-                                goal.is_completed && "opacity-60 bg-green-500/5 border-green-500/10"
-                            )}
-                        >
-                            <Checkbox
-                                checked={goal.is_completed}
-                                onCheckedChange={(checked) => toggleGoalMutation.mutate({ id: goal.id, is_completed: checked as boolean })}
-                                className="w-5 h-5 border-white/20 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-                            />
-                            <span className={cn(
-                                "flex-1 font-medium transition-all",
-                                goal.is_completed && "line-through text-muted-foreground"
-                            )}>
-                                {goal.title}
-                            </span>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                onClick={() => deleteGoalMutation.mutate(goal.id)}
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    ))
+                    goals?.map((goal, index) => {
+                        const isFirstCompleted = goal.is_completed && (index === 0 || !goals[index - 1].is_completed);
+
+                        return (
+                            <div key={goal.id}>
+                                {isFirstCompleted && index > 0 && (
+                                    <div className="flex items-center gap-4 py-6">
+                                        <div className="h-px bg-white/10 flex-1" />
+                                        <span className="text-xs font-medium text-white/40 uppercase tracking-widest">Completati</span>
+                                        <div className="h-px bg-white/10 flex-1" />
+                                    </div>
+                                )}
+                                <div
+                                    className={cn(
+                                        "group flex items-center gap-3 p-4 rounded-xl border transition-all",
+                                        goal.is_completed
+                                            ? "opacity-60 bg-green-500/5 border-green-500/10"
+                                            : (goalColors.find(c => c.value === goal.color)?.class || "bg-card/20 border-white/5 hover:bg-card/40")
+                                    )}
+                                >
+                                    <Checkbox
+                                        checked={goal.is_completed}
+                                        onCheckedChange={(checked) => toggleGoalMutation.mutate({ id: goal.id, is_completed: checked as boolean })}
+                                        className="w-5 h-5 border-white/20 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                                    />
+                                    <span className={cn(
+                                        "flex-1 font-medium transition-all",
+                                        goal.is_completed && "line-through text-muted-foreground"
+                                    )}>
+                                        {goal.title}
+                                    </span>
+
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Select
+                                            value={goal.color || "null"}
+                                            onValueChange={(val) => updateColorMutation.mutate({ id: goal.id, color: val === "null" ? null : val })}
+                                        >
+                                            <SelectTrigger className="w-[30px] h-[30px] p-0 border-0 bg-transparent focus:ring-0">
+                                                <div className={cn("w-4 h-4 rounded-full", {
+                                                    "bg-white/20": !goal.color,
+                                                    "bg-rose-500": goal.color === 'red',
+                                                    "bg-orange-500": goal.color === 'orange',
+                                                    "bg-amber-400": goal.color === 'yellow',
+                                                    "bg-blue-600": goal.color === 'blue',
+                                                    "bg-violet-600": goal.color === 'purple',
+                                                    "bg-fuchsia-500": goal.color === 'pink',
+                                                    "bg-cyan-500": goal.color === 'cyan',
+                                                })} />
+                                            </SelectTrigger>
+                                            <SelectContent align="end">
+                                                <SelectItem value="null">Nessun Colore</SelectItem>
+                                                <SelectItem value="red">Rosso</SelectItem>
+                                                <SelectItem value="orange">Arancione</SelectItem>
+                                                <SelectItem value="yellow">Giallo</SelectItem>
+                                                <SelectItem value="blue">Blu</SelectItem>
+                                                <SelectItem value="purple">Viola</SelectItem>
+                                                <SelectItem value="pink">Rosa</SelectItem>
+                                                <SelectItem value="cyan">Ciano</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 w-8"
+                                            onClick={() => deleteGoalMutation.mutate(goal.id)}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
                 )}
             </div>
 
