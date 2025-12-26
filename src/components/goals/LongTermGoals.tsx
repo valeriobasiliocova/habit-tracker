@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { MacroGoalsStats } from './MacroGoalsStats';
 import { GoalCategorySettingsDialog } from './GoalCategorySettingsDialog';
 import { useGoalCategories } from '@/hooks/useGoalCategories';
+import { useGoalBackup } from '@/hooks/useGoalBackup';
 import {
     Select,
     SelectContent,
@@ -205,6 +206,8 @@ export function LongTermGoals() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const { exportBackup, importBackup, isExporting, isImporting } = useGoalBackup();
+
     const handleImportClick = () => {
         fileInputRef.current?.click();
     };
@@ -213,108 +216,12 @@ export function LongTermGoals() {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const text = e.target?.result;
-            if (typeof text !== 'string') return;
+        await importBackup(file);
 
-            // Simple CSV parser that handles quoted strings
-            const parseCSV = (str: string) => {
-                const arr = [];
-                let quote = false;  // 'true' means we're inside a quoted field
-                let col = 0, c = 0;
-                // eslint-disable-next-line
-                for (let r = 0, c = 0, cc = str.length; c < cc; ++c) {
-                    let cc = str[c], nc = str[c + 1];        // Current character, next character
-                    arr[r] = arr[r] || [];             // Create a new row if necessary
-                    arr[r][col] = arr[r][col] || '';   // Create a new column (start with empty string) if necessary
-
-                    if (cc == '"' && quote && nc == '"') { arr[r][col] += cc; ++c; continue; }
-                    if (cc == '"') { quote = !quote; continue; }
-                    if (cc == ',' && !quote) { ++col; continue; }
-                    if (cc == '\r' && nc == '\n' && !quote) { ++r; col = 0; ++c; continue; }
-                    if (cc == '\n' && !quote) { ++r; col = 0; continue; }
-                    if (cc == '\r' && !quote) { ++r; col = 0; continue; }
-
-                    arr[r][col] += cc;
-                }
-                return arr;
-            };
-
-            const rows = parseCSV(text);
-            // Assuming header: id,title,is_completed,type,year,month,week_number,created_at,color
-            const headers = rows[0];
-            const dataRows = rows.slice(1);
-
-            let successCount = 0;
-            let errorCount = 0;
-
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                toast.error("Devi essere loggato per importare.");
-                return;
-            }
-
-            for (const row of dataRows) {
-                if (row.length < 2) continue; // Skip empty rows
-
-                const goalData: any = {
-                    user_id: user.id
-                };
-
-                // Helper to safely get value by header index
-                const getVal = (headerName: string) => {
-                    const idx = headers.indexOf(headerName);
-                    if (idx === -1) return undefined;
-                    const val = row[idx];
-                    if (val === 'null' || val === '') return null;
-                    return val;
-                };
-
-                // Map CSV fields to DB columns
-                try {
-                    const id = getVal('id');
-                    if (id) goalData.id = id;
-
-                    goalData.title = getVal('title');
-                    goalData.is_completed = getVal('is_completed') === 'true';
-                    goalData.type = getVal('type');
-                    goalData.year = parseInt(getVal('year') || '0');
-                    goalData.month = getVal('month') ? parseInt(getVal('month')!) : null;
-                    goalData.week_number = getVal('week_number') ? parseInt(getVal('week_number')!) : null;
-
-                    const createdAt = getVal('created_at');
-                    if (createdAt) goalData.created_at = createdAt;
-
-                    goalData.color = getVal('color');
-
-                    if (!goalData.title || !goalData.year || !goalData.type) {
-                        console.warn("Skipping invalid row:", row);
-                        errorCount++;
-                        continue;
-                    }
-
-                    const { error } = await supabase
-                        .from('long_term_goals')
-                        .upsert(goalData);
-
-                    if (error) {
-                        console.error("Error upserting goal:", error);
-                        errorCount++;
-                    } else {
-                        successCount++;
-                    }
-
-                } catch (e) {
-                    console.error("Error parsing row:", row, e);
-                    errorCount++;
-                }
-            }
-
-            toast.success(`Importazione completata: ${successCount} importati, ${errorCount} errori.`);
-            queryClient.invalidateQueries({ queryKey: ['longTermGoals'] });
-        };
-        reader.readAsText(file);
+        // Reset input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     const months = [
@@ -331,44 +238,6 @@ export function LongTermGoals() {
         { value: 11, label: 'Novembre' },
         { value: 12, label: 'Dicembre' },
     ];
-
-    // Handle Export
-    const handleExport = async () => {
-        const { data: allGoals, error } = await supabase
-            .from('long_term_goals')
-            .select('*');
-
-        if (error || !allGoals) {
-            toast.error("Errore durante l'esportazione");
-            return;
-        }
-
-        // Convert to CSV
-        const headers = ['id', 'title', 'is_completed', 'type', 'year', 'month', 'week_number', 'created_at', 'color'];
-        const csvContent = [
-            headers.join(','),
-            ...allGoals.map(g => [
-                g.id,
-                `"${g.title.replace(/"/g, '""')}"`, // Escape quotes
-                g.is_completed,
-                g.type,
-                g.year,
-                g.month,
-                g.week_number,
-                g.created_at,
-                g.color
-            ].join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `habit_tracker_backup_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
 
 
     // Generate year range: 2022 to (Current Year + 5)
@@ -481,7 +350,7 @@ export function LongTermGoals() {
                     {/* Export Button */}
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="icon" title="Esporta Backup">
+                            <Button variant="outline" size="icon" title="Esporta Backup (JSON)">
                                 <Download className="w-4 h-4" />
                             </Button>
                         </AlertDialogTrigger>
@@ -489,26 +358,28 @@ export function LongTermGoals() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Stai per scaricare un file CSV contenente TUTTI i tuoi macro obiettivi (inclusi quelli completati).
-                                    Questo file può essere usato come backup.
+                                    Stai per scaricare un backup completo (JSON) contenente TUTTI i tuoi obiettivi e le personalizzazioni delle categorie.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Annulla</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleExport}>Scarica CSV</AlertDialogAction>
+                                <AlertDialogAction onClick={exportBackup} disabled={isExporting}>
+                                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                    Scarica Backup
+                                </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
 
                     {/* Import Button */}
-                    <Button variant="outline" size="icon" title="Importa CSV" onClick={handleImportClick}>
-                        <Upload className="w-4 h-4" />
+                    <Button variant="outline" size="icon" title="Ripristina da Backup (JSON)" onClick={handleImportClick} disabled={isImporting}>
+                        {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                     </Button>
                     <input
                         type="file"
                         ref={fileInputRef}
                         onChange={handleFileUpload}
-                        accept=".csv"
+                        accept=".json"
                         className="hidden"
                     />
 
