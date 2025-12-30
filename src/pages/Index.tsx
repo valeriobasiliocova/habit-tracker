@@ -98,27 +98,29 @@ const Index = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
 
         {/* SIDEBAR / COMMAND CENTER (Cols 1-3) */}
-        <div className="lg:col-span-3 space-y-8">
+        <div className="lg:col-span-3 space-y-4 lg:space-y-8">
           {/* Header */}
-          <div className="glass-panel p-6 rounded-2xl space-y-4">
-            <div>
-              <h1 className="text-3xl font-display font-bold text-foreground">Protocollo</h1>
-              <p className="text-muted-foreground text-sm">Esecuzione giornaliera.</p>
+          <div className="glass-panel p-4 lg:p-6 rounded-2xl space-y-4 lg:sticky lg:top-24 transition-all">
+            <div className="flex flex-row lg:flex-col items-center lg:items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-display font-bold text-foreground">Protocollo</h1>
+                <p className="text-muted-foreground text-xs lg:text-sm">Esecuzione giornaliera.</p>
+              </div>
+
+              <div className="flex items-center space-x-2 lg:pt-2">
+                <Switch
+                  id="privacy-mode"
+                  checked={isPrivacyMode}
+                  onCheckedChange={setIsPrivacyMode}
+                />
+                <Label htmlFor="privacy-mode" className="text-xs text-muted-foreground flex items-center gap-2 cursor-pointer sr-only lg:not-sr-only lg:flex">
+                  {isPrivacyMode ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  Privacy
+                </Label>
+              </div>
             </div>
 
-            <div className="flex items-center space-x-2 pt-2">
-              <Switch
-                id="privacy-mode"
-                checked={isPrivacyMode}
-                onCheckedChange={setIsPrivacyMode}
-              />
-              <Label htmlFor="privacy-mode" className="text-xs text-muted-foreground flex items-center gap-2 cursor-pointer">
-                {isPrivacyMode ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                Privacy Mode
-              </Label>
-            </div>
-
-            <div className="pt-4 border-t border-white/5 flex gap-2">
+            <div className="pt-0 lg:pt-4 border-t-0 lg:border-t border-white/5 flex gap-2 justify-end lg:justify-start">
               <HabitSettings
                 habits={goals}
                 onAddHabit={createGoal}
@@ -189,19 +191,19 @@ const Index = () => {
         <div className="lg:col-span-9 space-y-6">
 
           <Tabs defaultValue="month" value={view} onValueChange={setView} className="w-full">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-              <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-3 bg-card/40 border border-white/10 backdrop-blur-md rounded-xl p-1">
-                <TabsTrigger value="month" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm px-6">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Mese
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 lg:mb-6">
+              <TabsList className="grid w-full grid-cols-3 bg-card/40 border border-white/10 backdrop-blur-md rounded-xl p-1 shadow-sm">
+                <TabsTrigger value="month" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm py-2">
+                  <Calendar className="w-4 h-4 mr-1.5 xs:mr-2" />
+                  <span className="xs:inline">Mese</span>
                 </TabsTrigger>
-                <TabsTrigger value="week" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm px-6">
-                  <LayoutGrid className="w-4 h-4 mr-2" />
-                  Settimana
+                <TabsTrigger value="week" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm py-2">
+                  <LayoutGrid className="w-4 h-4 mr-1.5 xs:mr-2" />
+                  <span className="xs:inline">Settimana</span>
                 </TabsTrigger>
-                <TabsTrigger value="day" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm px-6">
-                  <ListTodo className="w-4 h-4 mr-2" />
-                  Oggi
+                <TabsTrigger value="day" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm py-2">
+                  <ListTodo className="w-4 h-4 mr-1.5 xs:mr-2" />
+                  <span className="xs:inline">Oggi</span>
                 </TabsTrigger>
               </TabsList>
             </div>

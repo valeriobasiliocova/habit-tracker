@@ -409,12 +409,12 @@ export function LongTermGoals() {
                 {/* 1. View Mode Switcher */}
                 <div className="flex justify-center w-full">
                     <Tabs value={view} onValueChange={(v) => setView(v as GoalType)} className="w-full max-w-2xl">
-                        <TabsList className="grid w-full grid-cols-5 p-1 bg-secondary/30 backdrop-blur-sm border border-white/5">
-                            <TabsTrigger value="annual">Annuale</TabsTrigger>
-                            <TabsTrigger value="quarterly">Trimestrale</TabsTrigger>
-                            <TabsTrigger value="monthly">Mensile</TabsTrigger>
-                            <TabsTrigger value="weekly">Settimanale</TabsTrigger>
-                            <TabsTrigger value="stats" className="gap-2"><PieChart className="w-4 h-4" /> Stats</TabsTrigger>
+                        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 w-full h-auto p-1 bg-secondary/30 backdrop-blur-sm border border-white/5 gap-1">
+                            <TabsTrigger value="annual" className="w-full">Annuale</TabsTrigger>
+                            <TabsTrigger value="quarterly" className="w-full">Trimestrale</TabsTrigger>
+                            <TabsTrigger value="monthly" className="w-full">Mensile</TabsTrigger>
+                            <TabsTrigger value="weekly" className="w-full">Settimanale</TabsTrigger>
+                            <TabsTrigger value="stats" className="w-full gap-2 col-span-2 sm:col-span-1"><PieChart className="w-4 h-4" /> Stats</TabsTrigger>
                         </TabsList>
                     </Tabs>
                 </div>
@@ -423,7 +423,7 @@ export function LongTermGoals() {
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 rounded-2xl bg-card/40 border border-white/5 backdrop-blur-xl transition-all duration-300">
 
                     {/* Left: Filters - Only show what's needed */}
-                    <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto scrollbar-hide">
+                    <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 w-full md:w-auto">
                         <Select value={selectedYear} onValueChange={(val) => setSelectedYear(val)}>
                             <SelectTrigger className="w-[120px] bg-background/40 border-white/5">
                                 <SelectValue placeholder="Anno" />

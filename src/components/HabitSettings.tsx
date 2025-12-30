@@ -69,7 +69,7 @@ export function HabitSettings({ habits, onAddHabit, onRemoveHabit, isDeleting, i
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                <Button variant="outline" size="icon" className="h-9 w-9 sm:h-9 sm:w-9">
                     <Settings className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
