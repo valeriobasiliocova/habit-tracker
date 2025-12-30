@@ -32,10 +32,10 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { format, getWeekOfMonth, getWeeksInMonth, startOfMonth } from 'date-fns';
+import { format, getQuarter, getWeekOfMonth, getWeeksInMonth, startOfMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
 
-type GoalType = 'annual' | 'monthly' | 'weekly' | 'stats';
+type GoalType = 'annual' | 'quarterly' | 'monthly' | 'weekly' | 'stats';
 
 export interface LongTermGoal {
     id: string;
@@ -43,6 +43,7 @@ export interface LongTermGoal {
     is_completed: boolean;
     type: GoalType;
     year: number;
+    quarter: number | null;
     month: number | null;
     week_number: number | null;
     created_at: string;
@@ -62,6 +63,7 @@ const goalColors = [
 
 export function LongTermGoals() {
     const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+    const [selectedQuarter, setSelectedQuarter] = useState<number>(getQuarter(new Date()));
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
     // Initialize with current week dynamically
     const [selectedWeek, setSelectedWeek] = useState<number>(getWeekOfMonth(new Date(), { weekStartsOn: 1 }));
@@ -103,8 +105,16 @@ export function LongTermGoals() {
         { value: "cyan", bg: "bg-cyan-500" },
     ].filter(c => c.value !== 'green'); // Ensure green is removed as per previous request
 
+
+    const quarters = [
+        { value: 1, label: '1° Trimestre (Q1)' },
+        { value: 2, label: '2° Trimestre (Q2)' },
+        { value: 3, label: '3° Trimestre (Q3)' },
+        { value: 4, label: '4° Trimestre (Q4)' },
+    ];
+
     const { data: goals, isLoading } = useQuery({
-        queryKey: ['longTermGoals', view, selectedYear, selectedMonth, selectedWeek],
+        queryKey: ['longTermGoals', view, selectedYear, selectedQuarter, selectedMonth, selectedWeek],
         queryFn: async () => {
             let query = supabase.from('long_term_goals')
                 .select('*')
@@ -117,7 +127,9 @@ export function LongTermGoals() {
                 query = query.eq('year', parseInt(selectedYear));
             }
 
-            if (view === 'monthly') {
+            if (view === 'quarterly') {
+                query = query.eq('quarter', selectedQuarter);
+            } else if (view === 'monthly') {
                 query = query.eq('month', selectedMonth);
             } else if (view === 'weekly') {
                 query = query.eq('month', selectedMonth).eq('week_number', selectedWeek);
@@ -140,14 +152,15 @@ export function LongTermGoals() {
                 title,
                 type: view,
                 year: selectedYear === 'all' ? new Date().getFullYear() : parseInt(selectedYear),
-                month: view !== 'annual' ? selectedMonth : null,
+                quarter: view === 'quarterly' ? selectedQuarter : null,
+                month: (view === 'monthly' || view === 'weekly') ? selectedMonth : null,
                 week_number: view === 'weekly' ? selectedWeek : null,
                 is_completed: false, // Default to false
                 color: color,
             };
 
-            const { data, error } = await supabase
-                .from('long_term_goals')
+            const { data, error } = await (supabase
+                .from('long_term_goals') as any)
                 .insert(newGoal)
                 .select()
                 .single();
@@ -168,8 +181,8 @@ export function LongTermGoals() {
 
     const toggleGoalMutation = useMutation({
         mutationFn: async ({ id, is_completed }: { id: string; is_completed: boolean }) => {
-            const { error } = await supabase
-                .from('long_term_goals')
+            const { error } = await (supabase
+                .from('long_term_goals') as any)
                 .update({ is_completed })
                 .eq('id', id);
 
@@ -182,7 +195,7 @@ export function LongTermGoals() {
 
     const updateColorMutation = useMutation({
         mutationFn: async ({ id, color }: { id: string, color: string | null }) => {
-            const { error } = await supabase.from('long_term_goals').update({ color }).eq('id', id);
+            const { error } = await (supabase.from('long_term_goals') as any).update({ color }).eq('id', id);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -265,7 +278,7 @@ export function LongTermGoals() {
 
             if (error && error.code !== 'PGRST116') console.error('Error fetching min year:', error);
             // Default to 2022 if no data or error, or the found year if valid
-            const year = data?.year || 2022;
+            const year = (data as any)?.year || 2022;
             return year;
         }
     });
@@ -414,6 +427,24 @@ export function LongTermGoals() {
                         </SelectContent>
                     </Select>
 
+                    {view === 'quarterly' && (
+                        <Select value={selectedQuarter.toString()} onValueChange={(val) => setSelectedQuarter(parseInt(val))}>
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="Trimestre" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {quarters.map(q => (
+                                    <SelectItem
+                                        key={q.value}
+                                        value={q.value.toString()}
+                                    >
+                                        {q.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+
                     {(view === 'monthly' || view === 'weekly') && (
                         <Select value={selectedMonth.toString()} onValueChange={(val) => {
                             setSelectedMonth(parseInt(val));
@@ -468,6 +499,13 @@ export function LongTermGoals() {
                         className="whitespace-nowrap"
                     >
                         Annuale
+                    </Button>
+                    <Button
+                        variant={view === 'quarterly' ? "default" : "outline"}
+                        onClick={() => setView('quarterly')}
+                        className="whitespace-nowrap"
+                    >
+                        Trimestrale
                     </Button>
                     <Button
                         variant={view === 'monthly' ? "default" : "outline"}
@@ -564,10 +602,11 @@ export function LongTermGoals() {
                 ) : (
                     <>
                         {view === 'annual' && <span className="text-primary">{selectedYear === 'all' ? 'Tutti gli anni' : selectedYear}</span>}
+                        {view === 'quarterly' && <span className="text-amber-500">Q{selectedQuarter} {selectedYear !== 'all' && selectedYear}</span>}
                         {view === 'monthly' && <span className="text-blue-400">{months.find(m => m.value === selectedMonth)?.label}</span>}
                         {view === 'weekly' && <span className="text-purple-400">Settimana {selectedWeek}</span>}
                         <span className="text-muted-foreground text-lg font-normal">
-                            {view === 'annual' ? 'Obiettivi Annuali' : view === 'monthly' ? 'Obiettivi Mensili' : 'Obiettivi Settimanali'}
+                            {view === 'annual' ? 'Obiettivi Annuali' : view === 'quarterly' ? 'Obiettivi Trimestrali' : view === 'monthly' ? 'Obiettivi Mensili' : 'Obiettivi Settimanali'}
                         </span>
                     </>
                 )}
@@ -582,7 +621,7 @@ export function LongTermGoals() {
                     <form onSubmit={handleCreate} className="flex gap-2">
                         <Input
                             className="flex-1 bg-background/50"
-                            placeholder={`Aggiungi obiettivo ${view === 'annual' ? 'annuale' : view === 'monthly' ? 'mensile' : 'settimanale'}...`}
+                            placeholder={`Aggiungi obiettivo ${view === 'annual' ? 'annuale' : view === 'quarterly' ? 'trimestrale' : view === 'monthly' ? 'mensile' : 'settimanale'}...`}
                             value={newGoalTitle}
                             onChange={(e) => setNewGoalTitle(e.target.value)}
                         />
