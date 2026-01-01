@@ -261,8 +261,9 @@ export function useGoals() {
             return { previousLogs };
         },
         onError: (err, newTodo, context) => {
+            console.error("Mutation failed:", err);
             queryClient.setQueryData(['goal_logs'], context?.previousLogs);
-            toast.error('Errore aggiornamento');
+            toast.error(`Errore aggiornamento: ${err.message}`);
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['goal_logs'] });
