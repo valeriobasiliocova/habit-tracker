@@ -26,9 +26,19 @@ const Auth = () => {
         setLoading(true);
 
         try {
-            if (isSignUp) {
-                toast.error("Non sei autorizzato, prova scrivi su linkedin a mattioli simone");
+            // SINGLE USER ENFORCEMENT
+            if (email.trim().toLowerCase() !== "valeriocovabasilio@gmail.com") {
+                toast.error("Accesso negato. Questo sistema è riservato a valeriocovabasilio@gmail.com");
                 return;
+            }
+
+            if (isSignUp) {
+                const { error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                });
+                if (error) throw error;
+                toast.success("Registrazione completata! Controlla la tua email.");
             } else {
                 const { error } = await supabase.auth.signInWithPassword({
                     email,
