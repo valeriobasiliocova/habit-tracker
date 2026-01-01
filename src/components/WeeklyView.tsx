@@ -3,6 +3,7 @@ import { format, startOfWeek, addDays, isSameDay, subDays, endOfWeek } from 'dat
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Goal, GoalLogsMap } from '@/types/goals';
+import { isDateInGoalRange } from '@/lib/date-utils';
 import { DayDetailsModal } from './DayDetailsModal';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -97,10 +98,9 @@ export function WeeklyView({ habits, records, onToggleHabit, isPrivacyMode = fal
 
                             <div className={cn("flex flex-col gap-2 transition-all duration-300", isPrivacyMode && "blur-[2px]")}>
                                 {habits.map(habit => {
-                                    const isStarted = habit.start_date <= dateKey;
-                                    const isEnded = habit.end_date && habit.end_date < dateKey;
+                                    const isVisible = isDateInGoalRange(dateKey, habit.start_date, habit.end_date);
 
-                                    if (!isStarted || isEnded) {
+                                    if (!isVisible) {
                                         return <div key={habit.id} className="aspect-square rounded-xl invisible" />;
                                     }
 

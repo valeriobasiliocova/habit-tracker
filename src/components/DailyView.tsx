@@ -3,7 +3,7 @@ import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Goal, GoalLogsMap } from '@/types/goals';
 import { Check, X } from 'lucide-react';
-import { getLocalDateKey } from '@/lib/date-utils';
+import { getLocalDateKey, isDateInGoalRange } from '@/lib/date-utils';
 
 interface DailyViewProps {
     habits: Goal[];
@@ -18,11 +18,7 @@ export function DailyView({ habits, records, onToggleHabit, isPrivacyMode = fals
     const dayRecord = records[dateKey] || {};
 
     // Filter habits valid for today
-    const validHabits = habits.filter(h => {
-        const isStarted = h.start_date <= dateKey;
-        const isNotEnded = !h.end_date || h.end_date >= dateKey;
-        return isStarted && isNotEnded;
-    });
+    const validHabits = habits.filter(h => isDateInGoalRange(dateKey, h.start_date, h.end_date));
 
     return (
         <div className="glass-panel rounded-3xl p-6 animate-scale-in max-w-lg mx-auto w-full">

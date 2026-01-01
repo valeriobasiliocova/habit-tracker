@@ -13,7 +13,12 @@ export function getLocalDateKey(date: Date = new Date()): string {
  * Checks if a date string is valid and within the start/end range of a goal.
  */
 export function isDateInGoalRange(dateStr: string, startDateStr: string, endDateStr?: string | null): boolean {
-    if (dateStr < startDateStr) return false;
-    if (endDateStr && dateStr > endDateStr) return false;
+    // Normalize dates to YYYY-MM-DD by stripping time
+    const d = dateStr.split('T')[0];
+    const start = startDateStr.split('T')[0];
+    const end = endDateStr ? endDateStr.split('T')[0] : null;
+
+    if (d < start) return false;
+    if (end && d > end) return false;
     return true;
 }

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Goal, GoalLogsMap } from '@/types/goals';
+import { isDateInGoalRange } from '@/lib/date-utils';
 import { DayDetailsModal } from './DayDetailsModal';
 
 interface HabitCalendarProps {
@@ -70,11 +71,7 @@ export function HabitCalendar({ habits, records, onToggleHabit, isPrivacyMode = 
             const future = isFuture(day);
 
             // Filter habits valid for this date
-            const validHabits = habits.filter(h => {
-                const isStarted = h.start_date <= dateKey;
-                const isNotEnded = !h.end_date || h.end_date >= dateKey;
-                return isStarted && isNotEnded;
-            });
+            const validHabits = habits.filter(h => isDateInGoalRange(dateKey, h.start_date, h.end_date));
 
             // Calculate daily progress
             const completedCount = validHabits.filter(h => dayRecord[h.id] === 'done').length;

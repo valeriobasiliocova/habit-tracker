@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Goal, GoalLogsMap } from '@/types/goals';
 import { cn } from '@/lib/utils';
+import { isDateInGoalRange } from '@/lib/date-utils';
 
 interface DayDetailsModalProps {
     isOpen: boolean;
@@ -31,11 +32,7 @@ export function DayDetailsModal({
     if (!date) return null;
 
     const dateKey = format(date, 'yyyy-MM-dd');
-    const validHabits = habits.filter(h => {
-        const isStarted = h.start_date <= dateKey;
-        const isNotEnded = !h.end_date || h.end_date >= dateKey;
-        return isStarted && isNotEnded;
-    });
+    const validHabits = habits.filter(h => isDateInGoalRange(dateKey, h.start_date, h.end_date));
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
