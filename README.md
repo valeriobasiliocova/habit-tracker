@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌟 Mattioli.OS
+# 🌟 Vale.OS
 
 ### **Master Your Discipline. Own Your Data. Gamify Your Growth.**
 
@@ -48,9 +48,9 @@ npm run dev
 
 ## 💎 Key Features
 
-Why choose **Mattioli.OS** over Notion, Todoist, or expensive SaaS apps?
+Why choose **Vale.OS** over Notion, Todoist, or expensive SaaS apps?
 
-| Feature | 🌟 Mattioli.OS | 📝 Notion/Generic | 💰 Paid SaaS |
+| Feature | 🌟 Vale.OS | 📝 Notion/Generic | 💰 Paid SaaS |
 | :--- | :---: | :---: | :---: |
 | **Data Ownership** | ✅ **100% Yours** (Local/Supabase) | ❌ Cloud Only | ❌ Vendor Locked |
 | **Cost** | ✅ **Free Forever** | ⚠️ Monthly Sub | ❌ $$$ / Month |

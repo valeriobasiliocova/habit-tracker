@@ -59,7 +59,7 @@ const Auth = () => {
                         <ShieldCheck className="w-6 h-6 text-primary" />
                     </div>
                     <h1 className="text-3xl font-display font-bold tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
-                        Mattioli.OS
+                        Vale.OS
                     </h1>
                     <p className="text-sm text-muted-foreground font-light">
                         Sistema di tracciamento abitudini personale

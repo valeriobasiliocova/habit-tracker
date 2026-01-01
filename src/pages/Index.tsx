@@ -181,7 +181,7 @@ const Index = () => {
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             </div>
             <p className="text-xs text-muted-foreground mt-4">
-              Mattioli.OS v1.0<br />
+              Vale.OS v1.0<br />
               System Optimized
             </p>
           </div>

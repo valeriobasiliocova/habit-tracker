@@ -1,4 +1,4 @@
-# 🇺🇸 Technical Guide - Mattioli.OS
+# 🇺🇸 Technical Guide - Vale.OS
 
 Complete guide for developers or anyone wishing to self-host the application.
 

@@ -19,7 +19,7 @@ export function Layout() {
               <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full opacity-50" />
             </div>
             <span className="font-display font-bold text-lg sm:text-lg tracking-tight group-hover:text-primary transition-colors">
-              Mattioli.OS
+              Vale.OS
             </span>
           </Link>
 

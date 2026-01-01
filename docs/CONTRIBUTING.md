@@ -1,4 +1,4 @@
-# 🤝 Contributing to Mattioli.OS
+# 🤝 Contributing to Vale.OS
 
 First off, thanks for taking the time to contribute! 🎉
 

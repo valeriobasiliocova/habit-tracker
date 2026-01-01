@@ -1,4 +1,4 @@
-# 🇺🇸 User Manual - Mattioli.OS
+# 🇺🇸 User Manual - Vale.OS
 
 Welcome to your new personal command center. This guide will walk you through using the application to maximize your productivity and discipline.
 

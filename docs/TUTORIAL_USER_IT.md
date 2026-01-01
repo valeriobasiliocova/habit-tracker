@@ -1,4 +1,4 @@
-# 🇮🇹 Manuale Utente - Mattioli.OS
+# 🇮🇹 Manuale Utente - Vale.OS
 
 Benvenuto nel tuo nuovo centro di comando personale. Questa guida ti accompagnerà passo dopo passo nell'utilizzo dell'applicazione per massimizzare la tua produttività e disciplina.
 

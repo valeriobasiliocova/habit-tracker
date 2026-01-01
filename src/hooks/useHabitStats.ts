@@ -91,7 +91,7 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
             // Done -> +1
             // Missed -> Break
             // Null -> Break (if strict) OR Continue (if lenient). 
-            // Mattioli.OS should be strict: you must execute.
+            // Vale.OS should be strict: you must execute.
             else {
                 // If today is NOT done, streak is officially 0 unless we are lenient.
                 // But usually currentStreak counts CONSECUTIVE days ending today or yesterday.

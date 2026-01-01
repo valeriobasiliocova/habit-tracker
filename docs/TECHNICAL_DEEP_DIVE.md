@@ -1,6 +1,6 @@
 # ⚙️ Technical Deep Dive & Architecture
 
-> This document provides an under-the-hood look at **Mattioli.OS**. It explains the design choices, the technology stack, and how specific features were implemented.
+> This document provides an under-the-hood look at **Vale.OS**. It explains the design choices, the technology stack, and how specific features were implemented.
 
 ## 🏗 System Architecture
 
